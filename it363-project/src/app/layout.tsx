@@ -1,36 +1,14 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Header from "../components/Header";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "The Station Food Truck",
-  description: "The Station food truck website",
+export const metadata = {
+  title: "The Station Foodtruck",
+  description: "The Station — schedule and daily menu",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Header/>
-
-        <div className="pt-14">{children}</div>
-      </body>
+    <html lang="en" className="bg-neutral-900">
+      <body className="min-h-screen">{children}</body>
     </html>
   );
 }
