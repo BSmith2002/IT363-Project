@@ -61,7 +61,8 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
 
           <ul className="divide-y divide-white/10 rounded-b-xl border border-t-0 border-white/10 bg-white/5">
             {(section.items ?? []).map((it) => {
-              // for firestor once its implemented and paid
+              // wants to use Firestore photoUrl; otherwise use local /public/(name).jpg (will get used
+              // once it is paid for and functional)
               const initialSrc = it.photoUrl || `/${it.id}.jpg`;
 
               return (
@@ -71,7 +72,8 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
                     {it.desc && <div className="text-sm text-gray-300">{it.desc}</div>}
                     {it.price && <div className="text-sm mt-1">${it.price}</div>}
                   </div>
-              // for firestore once its implemented and paid
+
+                  {/* local photo for now */}
                   <div className="shrink-0">
                     <img
                       src={initialSrc}
@@ -79,7 +81,7 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
                       className="h-16 w-16 rounded-lg object-cover ring-1 ring-white/20"
                       onError={(e) => {
                         const img = e.currentTarget as HTMLImageElement;
-                        img.onerror = null; // prevent infinite loop
+                        img.onerror = null;
                         img.src = "/phillytemp.jpg";
                       }}
                     />
