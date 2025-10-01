@@ -19,7 +19,7 @@ export default function Home() {
   );
 }
 
-"use client";
+//"use client";
 function ClientHome() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);

@@ -22,8 +22,10 @@ export default function AdminLoginPortal() {
     try {
       await signInWithEmailAndPassword(auth, email, pass);
       setEmail(""); setPass("");
-    } catch (e: any) {
-      setError(e.message || "Login failed");
+    } catch (e) {
+      // `e` has implicit type `unknown` in modern TS. Narrow safely to Error.
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || "Login failed");
     }
   }
 
