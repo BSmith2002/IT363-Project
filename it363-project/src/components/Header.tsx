@@ -18,6 +18,20 @@ export default function Header() {
           <nav>
             <ul className="flex items-center gap-6">
               <li>
+                <a
+                  href="https://www.facebook.com/Thestationfoodtruck/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block rounded-md focus:outline-none p-0.5"
+                >
+                  <img
+                    src="/Facebook_logo_(square).png"
+                    alt="Facebook logo"
+                    className="h-10 w-10 rounded-md object-contain hover:ring-2 hover:ring-white/90 focus-visible:ring-2 focus-visible:ring-white/90 active:scale-80 transition-transform duration-150"
+                  />
+                </a>
+              </li>
+              <li>
                 <button
                   type="button"
                   aria-label="Go to Home"
@@ -26,15 +40,6 @@ export default function Header() {
                 >
                   Home
                 </button>
-              </li>
-              <li>
-                <Link
-                  href="https://www.facebook.com/Thestationfoodtruck/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Facebook
-                </Link>
               </li>
             </ul>
           </nav>
