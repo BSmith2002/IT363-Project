@@ -1,7 +1,8 @@
 "use client";
 
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export default function AdminLoginPortal() {
@@ -10,12 +11,30 @@ export default function AdminLoginPortal() {
   const [pass, setPass] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Get allowed admin emails from environment variable
-  const allowedAdmins = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",").map(e => e.trim()).filter(Boolean);
+  // State for allowed admin emails from Firestore document
+  const [allowedAdmins, setAllowedAdmins] = useState<string[]>([]);
+
+  // Fetch admin emails
+  useEffect(() => {
+    async function fetchAdminEmails() {
+      const ref = doc(db, "admin", "emails");
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        // Collect all email values from the document
+        const emails = Object.values(data)
+          .filter(v => typeof v === "string" && v.includes("@"))
+          .map(e => e.trim().toLowerCase());
+        setAllowedAdmins(emails);
+      }
+    }
+    fetchAdminEmails();
+  }, []);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
-      if (u && !allowedAdmins.includes(u.email ?? "")) {
+      const userEmail = (u?.email ?? "").trim().toLowerCase();
+      if (u && allowedAdmins.length > 0 && !allowedAdmins.includes(userEmail)) {
         setError("You are not authorized to access the admin portal.");
         signOut(auth);
         setUser(null);
