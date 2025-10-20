@@ -11,9 +11,9 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <img
-            src="/thestationlogo.png"
+            src="/thestationlogo2.png"
             alt="The Station logo"
-            className="h-12 w-auto"
+            className="h-16 w-auto"
           />
           <nav>
             <ul className="flex items-center gap-6">
