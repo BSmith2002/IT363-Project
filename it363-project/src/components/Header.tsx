@@ -41,6 +41,16 @@ export default function Header() {
                   Home
                 </button>
               </li>
+              <li>
+                <button
+                  type="button"
+                  aria-label="About Us"
+                  onClick={() => router.push("/About Us")}
+                  className="text-lg hover:underline"
+                >
+                  About Us
+                </button>
+              </li>
             </ul>
           </nav>
         </div>
