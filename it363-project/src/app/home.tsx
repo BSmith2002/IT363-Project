@@ -2,19 +2,21 @@ import Header from "@/components/Header";
 import Calendar from "@/components/Calendar";
 import EventList from "@/components/EventList";
 import MenuView from "@/components/MenuView";
+import Footer from "@/components/Footer";
 import { useState } from "react";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-neutral-900 text-white">
       <Header />
-      <main className="pt-20 pb-16 px-4 sm:px-6 flex flex-col items-center">
+      <main className="pt-20 pb-20 px-4 sm:px-6 flex flex-col items-center">
         <h1 className="text-3xl sm:text-4xl font-bold mb-6">
           Our Events
         </h1>
 
         <ClientHome />
       </main>
+      <Footer /> 
     </div>
   );
 }
