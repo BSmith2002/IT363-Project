@@ -11,12 +11,26 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <img
-            src="/thestationlogo.png"
+            src="/thestationlogo2.png"
             alt="The Station logo"
-            className="h-12 w-auto"
+            className="h-16 w-auto"
           />
           <nav>
             <ul className="flex items-center gap-6">
+              <li>
+                <a
+                  href="https://www.facebook.com/Thestationfoodtruck/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block rounded-md focus:outline-none p-0.5"
+                >
+                  <img
+                    src="/Facebook_logo_(square).png"
+                    alt="Facebook logo"
+                    className="h-10 w-10 rounded-md object-contain hover:ring-2 hover:ring-white/90 focus-visible:ring-2 focus-visible:ring-white/90 active:scale-80 transition-transform duration-150"
+                  />
+                </a>
+              </li>
               <li>
                 <button
                   type="button"
@@ -28,13 +42,14 @@ export default function Header() {
                 </button>
               </li>
               <li>
-                <Link
-                  href="https://www.facebook.com/Thestationfoodtruck/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  aria-label="About Us"
+                  onClick={() => router.push("/About Us")}
+                  className="text-lg hover:underline"
                 >
-                  Facebook
-                </Link>
+                  About Us
+                </button>
               </li>
             </ul>
           </nav>
