@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import {
   addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query,
-  serverTimestamp, updateDoc, getDoc
+  serverTimestamp, updateDoc, getDoc, setDoc
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import Calendar from "@/components/Calendar";
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   // Tabs
-  const TABS = ["DAYS", "ITEMS"] as const;
+  const TABS = ["DAYS", "ITEMS", "USERS"] as const;
   type Tab = typeof TABS[number];
   const [tab, setTab] = useState<Tab>("DAYS");
 
@@ -173,8 +173,10 @@ export default function AdminDashboard() {
 
           {tab === "DAYS" ? (
             <DaysTab menus={menus} menuMap={menuMap} />
-          ) : (
+          ) : tab === "ITEMS" ? (
             <ItemsTab menus={menus} />
+          ) : (
+            <UsersTab />
           )}
         </div>
       )}
@@ -680,6 +682,320 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+/* ========================= USERS TAB =========================
+   Choose a template first; if not found, switch to "Custom / New".
+   Then submit the event for the selected calendar day.
+==============================================================*/
+// ========================= USERS TAB (reuse from existing events) =========================
+function UsersTab() {
+  const [user, setUser] = useState<null | { email: string }>(null);
+  const [adminEmails, setAdminEmails] = useState<string[]>([]);
+  const [authUsers, setAuthUsers] = useState<{ uid: string; email?: string; displayName?: string; providerIds: string[] }[]>([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(true);
+  const [newEmail, setNewEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  // create auth user fields
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createDisplayName, setCreateDisplayName] = useState("");
+
+
+  // load admin emails (Firestore doc: admin/emails)
+  async function loadAdminEmails() {
+    setLoadingAdmins(true);
+    try {
+      const ref = doc(db, "admin", "emails");
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        const emails = Object.values(data)
+          .filter((v) => typeof v === "string" && v.includes("@"))
+          .map((e) => (e as string).trim().toLowerCase());
+        setAdminEmails(emails);
+      } else {
+        setAdminEmails([]);
+      }
+    } catch (e) {
+      console.warn("Failed to load admin emails", e);
+      setAdminEmails([]);
+    } finally {
+      setLoadingAdmins(false);
+    }
+  }
+
+  useEffect(() => {
+    // keep user in state
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u ? { email: u.email ?? "" } : null);
+    });
+    loadAdminEmails();
+    loadAuthUsers();
+    return () => unsub();
+  }, []);
+
+  async function getIdToken() {
+    const u = auth.currentUser;
+    if (!u) return null;
+    try {
+      return await u.getIdToken();
+    } catch (e) {
+      console.warn("Failed to get ID token", e);
+      return null;
+    }
+  }
+
+  async function createAuthUser() {
+    setMsg(null);
+    const em = createEmail.trim().toLowerCase();
+    const pw = createPassword;
+    if (!em || !em.includes("@") || !pw) {
+      setMsg("Enter valid email and password");
+      return;
+    }
+    setBusy(true);
+    try {
+      const token = await getIdToken();
+      if (!token) { setMsg("Not authenticated"); setBusy(false); return; }
+      const res = await fetch("/api/admin/manage-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({
+          email: em,
+          password: pw,
+          displayName: createDisplayName || undefined,
+          makeAdmin: false,
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setMsg(j?.error || "Failed to create user");
+      } else {
+        setMsg(`Created user ${j.email} (uid: ${j.uid})`);
+        // Optionally reload admin emails list in case you added to allowlist elsewhere
+        await loadAdminEmails();
+        await loadAuthUsers();
+        setCreateEmail(""); setCreatePassword(""); setCreateDisplayName("");
+      }
+    } catch (e: any) {
+      console.error(e);
+      setMsg(e?.message || "Failed to create user");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteAuthUser(email: string) {
+    if (!confirm(`Delete auth user ${email}? This will remove their account.`)) return;
+    setBusy(true);
+    try {
+      const token = await getIdToken();
+      if (!token) { setMsg("Not authenticated"); setBusy(false); return; }
+      const res = await fetch("/api/admin/manage-user", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ email, removeFromAllowlist: true }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setMsg(j?.error || "Failed to delete user");
+      } else {
+        setMsg("Deleted user");
+        await loadAdminEmails();
+        await loadAuthUsers();
+      }
+    } catch (e: any) {
+      console.error(e);
+      setMsg(e?.message || "Failed to delete user");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadAuthUsers() {
+    setMsg(null);
+    try {
+      const token = await getIdToken();
+      if (!token) { setMsg("Not authenticated"); return; }
+      const res = await fetch("/api/admin/manage-user", {
+        method: "GET",
+        headers: { Authorization: "Bearer " + token }
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setMsg(j?.error || "Failed to load auth users");
+      } else {
+        setAuthUsers(j.users ?? []);
+      }
+    } catch (e: any) {
+      console.error(e);
+      setMsg(e?.message || "Failed to load auth users");
+    }
+  }
+
+  async function addAdminEmail() {
+    setMsg(null);
+    const em = newEmail.trim().toLowerCase();
+    if (!em || !em.includes("@")) {
+      setMsg("Enter a valid email");
+      return;
+    }
+    setBusy(true);
+    try {
+      const ref = doc(db, "admin", "emails");
+      const snap = await getDoc(ref);
+      const key = Date.now().toString();
+      if (snap.exists()) {
+        await updateDoc(ref, { [key]: em });
+      } else {
+        await setDoc(ref, { [key]: em });
+      }
+      setNewEmail("");
+      await loadAdminEmails();
+      setMsg("Added admin email");
+    } catch (e: any) {
+      console.error(e);
+      setMsg(e?.message || "Failed to add");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeAdminEmail(email: string) {
+    if (!confirm(`Remove ${email} from admin allowlist?`)) return;
+    setBusy(true);
+    try {
+      const ref = doc(db, "admin", "emails");
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        setMsg("No admin allowlist found");
+        return;
+      }
+      const data = snap.data() as Record<string, any>;
+      const next: Record<string, any> = {};
+      for (const [k, v] of Object.entries(data)) {
+        if ((v ?? "").toString().trim().toLowerCase() !== email.trim().toLowerCase()) {
+          next[k] = v;
+        }
+      }
+      // overwrite doc with remaining entries (or empty object)
+      await setDoc(ref, next);
+      await loadAdminEmails();
+      setMsg("Removed admin email");
+    } catch (e: any) {
+      console.error(e);
+      setMsg(e?.message || "Failed to remove");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      
+      <div className="rounded-2xl border border-black/10 p-5 bg-white max-w-3xl mx-auto w-full">
+      {msg && <div className="text-md font-semibold text-red-600 mb-3">{msg}</div>}
+        <h2 className="text-xl font-semibold mb-2">Manage Admin Emails</h2>
+  <p className="text-sm text-black/70 mb-4">Add or remove emails from the admin allowlist for google authentication and password login(Firestore doc: <code>admin/emails</code>).</p>
+
+        <div className="flex gap-2 mb-4">
+          <input
+            className="flex-1 rounded px-3 py-2 border border-black/20"
+            placeholder="newadmin@example.com"
+            value={newEmail}
+            onChange={e => setNewEmail(e.target.value)}
+            disabled={busy}
+          />
+          <button onClick={addAdminEmail} disabled={busy} className="rounded bg-red-600 text-white px-4 py-2 hover:opacity-90">Add</button>
+        </div>
+
+        <div>
+          <h3 className="font-medium font-semibold mb-2">Allowlist Admin Emails</h3>
+          {loadingAdmins ? (
+            <div className="text-black/60">Loading…</div>
+          ) : adminEmails.length === 0 ? (
+            <div className="text-black/60">No admin allowlist configured (empty = unrestricted).</div>
+          ) : (
+            <ul className="divide-y divide-black/10">
+              {adminEmails.map((em) => (
+                <li key={em} className="py-2 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="font-medium">{em}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => removeAdminEmail(em)} className="rounded bg-red-700 text-white px-3 py-1">Remove</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {/* Create auth user */}
+        <div>
+          <h4 className="text-xl font-semibold mb-4">Create New Auth Password User</h4>
+          <div className="grid sm:grid-cols-3 gap-4 mb-4">
+            <input
+              className="rounded px-4 py-3 border border-black/20 text-sm"
+              placeholder="email@domain.com"
+              value={createEmail}
+              onChange={e => setCreateEmail(e.target.value)}
+            />
+            <input
+              className="rounded px-4 py-3 border border-black/20 text-sm"
+              placeholder="Password"
+              type="password"
+              value={createPassword}
+              onChange={e => setCreatePassword(e.target.value)}
+            />
+            <input
+              className="rounded px-4 py-3 border border-black/20 text-sm"
+              placeholder="Display name (optional)"
+              value={createDisplayName}
+              onChange={e => setCreateDisplayName(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <button onClick={createAuthUser} disabled={busy} className="rounded-lg bg-red-600 text-white px-6 py-3 hover:opacity-90 w-full sm:w-auto text-sm font-medium">Create Auth User</button>
+            <div className="text-sm text-black/60">Please add the email to the allowlist above. Otherwise the user will not be able to log in.</div>
+          </div>
+        </div>
+        {/* Auth users list */}
+        <div className="mt-6">
+          <h3 className="font-medium font-semibold mb-2">All Auth Users</h3>
+          {authUsers.length === 0 ? (
+            <div className="text-black/60">No auth users loaded. Click refresh to load.</div>
+          ) : (
+            <ul className="divide-y divide-black/10">
+              {authUsers.map(u => (
+                <li key={u.uid} className="py-2 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{u.email ?? <em>No email</em>}</div>
+                    <div className="text-sm text-black/60">{u.displayName ?? ""} {u.providerIds && u.providerIds.length ? `• ${u.providerIds.join(", ")}` : ""}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {u.providerIds.includes('google.com') && (
+                      <span className="text-sm text-black/50">Google</span>
+                    )}
+                    <button onClick={() => deleteAuthUser(u.email ?? "")} className="rounded bg-black/10 px-3 py-1 hover:bg-black/20">Delete Auth</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-3">
+            <button onClick={loadAuthUsers} className="rounded bg-black/10 px-3 py-1 hover:bg-black/20">Refresh Auth Users</button>
+          </div>
+        </div>
       </div>
     </div>
   );
