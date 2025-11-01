@@ -76,7 +76,34 @@ export default function AdminLoginPortal() {
       setPass("");
       // AdminDashboard will render automatically when user is set
     } catch (e: any) {
+      // If the account is disabled, show a clear message and don't register another failure
+      const code = e?.code || "";
+      if (code === "auth/invalid-credential") 
+        {
+          setError("Invalid email or password");
+          return;
+        }
+      else if (code === "auth/too-many-requests" || code === "auth/user-disabled") {
+        setError(
+          "Too many failed attempts. Your account is now disabled. Contact an admin"
+        );
+        return;
+      }
+
       setError(e.message || "Login failed");
+      // register failure with server so it can track attempts and disable after threshold
+      try {
+        await fetch("/api/admin/register-login-failure", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_ACTION_SECRET || "",
+          },
+          body: JSON.stringify({ email }),
+        });
+      } catch (er) {
+        console.warn("Failed to report login failure:", er);
+      }
     }
   }
 
@@ -86,6 +113,13 @@ export default function AdminLoginPortal() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (e: any) {
+      const code = e?.code || "";
+      if (code === "auth/user-disabled") {
+        setError(
+          "Too many failed attempts. Your account is now disabled. Contact an admin"
+        );
+        return;
+      }
       setError(e.message || "Google sign-in failed");
     }
   }
