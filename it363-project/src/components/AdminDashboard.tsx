@@ -694,7 +694,7 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
 function UsersTab() {
   const [user, setUser] = useState<null | { email: string }>(null);
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
-  const [authUsers, setAuthUsers] = useState<{ uid: string; email?: string; displayName?: string; providerIds: string[] }[]>([]);
+  const [authUsers, setAuthUsers] = useState<{ uid: string; email?: string; displayName?: string; providerIds: string[]; disabled?: boolean }[]>([]);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
   const [newEmail, setNewEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -817,6 +817,35 @@ function UsersTab() {
     } catch (e: any) {
       console.error(e);
       setMsg(e?.message || "Failed to delete user");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function enableAuthUser(email: string) {
+    if (!confirm(`Enable auth user ${email}?`)) return;
+    setBusy(true);
+    try {
+      const token = await getIdToken();
+      if (!token) { setMsg("Not authenticated"); setBusy(false); return; }
+      const res = await fetch("/api/admin/enable-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ email }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setMsg(j?.error || "Failed to enable user");
+      } else {
+        setMsg("Enabled user");
+        await loadAuthUsers();
+      }
+    } catch (e: any) {
+      console.error(e);
+      setMsg(e?.message || "Failed to enable user");
     } finally {
       setBusy(false);
     }
@@ -979,12 +1008,24 @@ function UsersTab() {
               {authUsers.map(u => (
                 <li key={u.uid} className="py-2 flex items-center justify-between">
                   <div>
-                    <div className="font-medium">{u.email ?? <em>No email</em>}</div>
+                    <div className="font-medium flex items-center gap-2">
+                      {u.email ?? <em>No email</em>}
+                      {u.disabled ? (
+                        <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded bg-yellow-300 text-black">Disabled</span>
+                      ) : (
+                        <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded bg-green-100 text-green-800">Active</span>
+                      )}
+                    </div>
                     <div className="text-sm text-black/60">{u.displayName ?? ""} {u.providerIds && u.providerIds.length ? `• ${u.providerIds.join(", ")}` : ""}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     {u.providerIds.includes('google.com') && (
                       <span className="text-sm text-black/50">Google</span>
+                    )}
+                    {u.disabled ? (
+                      <button onClick={() => enableAuthUser(u.email ?? "")} className="rounded bg-green-600 text-white px-3 py-1 hover:opacity-90">Enable</button>
+                    ) : (
+                      <button onClick={() => enableAuthUser(u.email ?? "")} disabled className="rounded bg-gray-200 text-gray-600 px-3 py-1">Enable</button>
                     )}
                     <button onClick={() => deleteAuthUser(u.email ?? "")} className="rounded bg-black/10 px-3 py-1 hover:bg-black/20">Delete Auth</button>
                   </div>

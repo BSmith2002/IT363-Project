@@ -184,6 +184,7 @@ export async function GET(req: Request) {
       email: u.email,
       displayName: u.displayName,
       providerIds: (u.providerData || []).map((p: any) => p.providerId),
+      disabled: !!u.disabled,
     }));
 
     return NextResponse.json({ users });
