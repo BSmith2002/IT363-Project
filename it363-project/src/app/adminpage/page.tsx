@@ -76,33 +76,55 @@ export default function AdminLoginPortal() {
       setPass("");
       // AdminDashboard will render automatically when user is set
     } catch (e: any) {
-      // If the account is disabled, show a clear message and don't register another failure
+      // Handle different Firebase Auth error codes
       const code = e?.code || "";
-      if (code === "auth/invalid-credential") 
-        {
-          setError("Invalid email or password");
-          return;
-        }
-      else if (code === "auth/too-many-requests" || code === "auth/user-disabled") {
-        setError(
-          "Too many failed attempts. Your account is now disabled. Contact an admin"
-        );
-        return;
+      console.log("Login error details:", { code, message: e?.message, email });
+      
+      if (code === "auth/invalid-credential") {
+        setError("Invalid email or password");
+        // Still register this as a login failure for our custom tracking
+      } else if (code === "auth/user-not-found") {
+        setError("Invalid email or password"); // Don't reveal that user doesn't exist for security
+        // Don't track failures for non-existent users
+      } else if (code === "auth/user-disabled") {
+        setError("Your account has been disabled by an administrator. Contact an admin to re-enable it.");
+        return; // Don't register additional failures for already disabled accounts
+      } else if (code === "auth/too-many-requests") {
+        setError("Too many login attempts from this IP address. This is Firebase's automatic protection. Please wait 15+ minutes, or try: 1) Use 'Forgot Password' link below, 2) Try from a different network/location, 3) Contact admin if this persists.");
+        return; // This is Firebase's IP-based rate limiting, not our user-specific tracking
+      } else if (code === "auth/network-request-failed") {
+        setError("Network error. Please check your internet connection and try again.");
+        return; // Network issues shouldn't count as login failures
+      } else {
+        setError(e.message || "Login failed");
       }
 
-      setError(e.message || "Login failed");
-      // register failure with server so it can track attempts and disable after threshold
-      try {
-        await fetch("/api/admin/register-login-failure", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_ACTION_SECRET || "",
-          },
-          body: JSON.stringify({ email }),
-        });
-      } catch (er) {
-        console.warn("Failed to report login failure:", er);
+      // Register failure with server for credential-related errors only (but not for non-existent users)
+      const shouldTrackFailure = (code === "auth/invalid-credential" || code === "auth/wrong-password" || !code) && code !== "auth/user-not-found";
+      
+      if (shouldTrackFailure && email) {
+        try {
+          console.log("Registering login failure for:", email);
+          const response = await fetch("/api/admin/register-login-failure", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-secret": process.env.NEXT_PUBLIC_ADMIN_ACTION_SECRET || "",
+            },
+            body: JSON.stringify({ email }),
+          });
+          const result = await response.json();
+          console.log("Login failure registration result:", { status: response.status, result });
+          
+          if (result.message && result.message.includes("not found")) {
+            console.log("User not found - not tracking login failures");
+          } else if (result.disabled) {
+            setError("Too many failed login attempts (3+). Your account has been automatically disabled. Contact an admin to re-enable it.");
+            return; // Don't show the original error if account was disabled by our system
+          }
+        } catch (er) {
+          console.warn("Failed to report login failure:", er);
+        }
       }
     }
   }
@@ -198,6 +220,15 @@ export default function AdminLoginPortal() {
             </svg>
             Sign in with Google
           </button>
+        </div>
+
+        <div className="mt-4 text-center">
+          <a 
+            href="/forgot-password"
+            className="text-sm text-white/70 hover:text-white underline"
+          >
+            Forgot your password?
+          </a>
         </div>
       </div>
     </div>

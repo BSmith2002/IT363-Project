@@ -71,6 +71,24 @@ async function verifyCallerIsAdmin(idToken: string) {
   return emails.length === 0 || emails.includes(callerEmail);
 }
 
+// Verify caller by fetching live GCP IAM members (or cache). This ensures the
+// current GCP IAM membership is used to authorize admin edits.
+async function verifyCallerIsGcpAdmin(idToken: string) {
+  const adm = await initAdmin();
+  const decoded = await adm.auth().verifyIdToken(idToken);
+  const callerEmail = (decoded.email || "").toLowerCase();
+
+  try {
+    const { getGcpIamMembers } = await import("../../../../lib/gcp");
+    const members = await getGcpIamMembers();
+    return Array.isArray(members) && members.includes(callerEmail);
+  } catch (e) {
+    // If the live check fails (missing creds/permission), deny by default to be safe.
+    console.warn("[verifyCallerIsGcpAdmin] failed to fetch GCP IAM members:", e);
+    return false;
+  }
+}
+
 export async function POST(req: Request) {
   // create user
   try {
@@ -82,8 +100,8 @@ export async function POST(req: Request) {
       : "";
     if (!idToken) return NextResponse.json({ error: "Missing ID token" }, { status: 401 });
 
-    const allowed = await verifyCallerIsAdmin(idToken);
-    if (!allowed) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  const allowed = await verifyCallerIsGcpAdmin(idToken);
+  if (!allowed) return NextResponse.json({ error: "Not authorized - requires GCP-synced admin" }, { status: 403 });
 
     const body = await req.json();
     const { email, password, displayName, makeAdmin } = body as {
@@ -127,8 +145,8 @@ export async function DELETE(req: Request) {
       : "";
     if (!idToken) return NextResponse.json({ error: "Missing ID token" }, { status: 401 });
 
-    const allowed = await verifyCallerIsAdmin(idToken);
-    if (!allowed) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  const allowed = await verifyCallerIsGcpAdmin(idToken);
+  if (!allowed) return NextResponse.json({ error: "Not authorized - requires GCP-synced admin" }, { status: 403 });
 
     const body = await req.json();
     const { uid, email, removeFromAllowlist } = body as { uid?: string; email?: string; removeFromAllowlist?: boolean };

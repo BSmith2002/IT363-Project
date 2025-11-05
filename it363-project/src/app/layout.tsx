@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-US" className="bg-neutral-900">
+    <html lang="en-US" className="bg-neutral-900" suppressHydrationWarning>
       {/*
         Some browser extensions (e.g. Grammarly) inject attributes onto <body>
         after hydration which causes React to warn about a mismatch between

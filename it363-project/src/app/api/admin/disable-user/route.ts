@@ -27,17 +27,6 @@ async function initAdmin() {
   return _admin;
 }
 
-async function verifyCallerIsAdmin(idToken: string) {
-  const adm = await initAdmin();
-  const decoded = await adm.auth().verifyIdToken(idToken);
-  const callerEmail = (decoded.email || "").toLowerCase();
-  const doc = await adm.firestore().doc("admin/emails").get();
-  if (!doc.exists) return true;
-  const data = doc.data() || {};
-  const emails = Object.values(data).filter(v => typeof v === "string").map(s => (s as string).trim().toLowerCase());
-  return emails.length === 0 || emails.includes(callerEmail);
-}
-
 async function verifyCallerIsGcpAdmin(idToken: string) {
   const adm = await initAdmin();
   const decoded = await adm.auth().verifyIdToken(idToken);
@@ -59,8 +48,8 @@ export async function POST(req: Request) {
     const idToken = authHeader.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : "";
     if (!idToken) return NextResponse.json({ error: "Missing ID token" }, { status: 401 });
 
-  const allowed = await verifyCallerIsGcpAdmin(idToken);
-  if (!allowed) return NextResponse.json({ error: "Not authorized - requires GCP-synced admin" }, { status: 403 });
+    const allowed = await verifyCallerIsGcpAdmin(idToken);
+    if (!allowed) return NextResponse.json({ error: "Not authorized - requires GCP-synced admin" }, { status: 403 });
 
     const body = await req.json();
     const email = (body?.email || "").toString().trim().toLowerCase();
@@ -70,16 +59,7 @@ export async function POST(req: Request) {
     const user = await adm.auth().getUserByEmail(email);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    await adm.auth().updateUser(user.uid, { disabled: false });
-
-    // Remove any recorded login failures for this email so the account is not immediately re-disabled
-    try {
-      const id = Buffer.from(email.toLowerCase().trim()).toString("base64");
-      await adm.firestore().collection("loginFailures").doc(id).delete();
-    } catch (e) {
-      // ignore if not found or error
-      console.warn("[enable-user] failed to delete loginFailures doc:", e);
-    }
+    await adm.auth().updateUser(user.uid, { disabled: true });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
