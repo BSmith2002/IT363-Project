@@ -62,6 +62,34 @@ export async function POST(req: Request) {
     }
 
     const adm = await initAdmin();
+    
+    // First, check if the user exists in Firebase Auth
+    let userExists = false;
+    try {
+      await adm.auth().getUserByEmail(email);
+      userExists = true;
+    } catch (e: any) {
+      if (e.code === 'auth/user-not-found') {
+        console.log("[register-login-failure] user not found, not tracking failures for:", email);
+        return NextResponse.json({ 
+          attempts: 0, 
+          disabled: false, 
+          message: "User not found - not tracking failures" 
+        });
+      }
+      // For other errors (network issues, etc.), we'll still track failures
+      console.warn("[register-login-failure] error checking user existence:", e?.message || e);
+      userExists = true; // Assume user exists if we can't verify (fail open for existing users)
+    }
+
+    if (!userExists) {
+      return NextResponse.json({ 
+        attempts: 0, 
+        disabled: false, 
+        message: "User not found - not tracking failures" 
+      });
+    }
+
     const id = emailToId(email);
     const ref = adm.firestore().collection("loginFailures").doc(id);
     const snap = await ref.get();
@@ -75,15 +103,17 @@ export async function POST(req: Request) {
     const docData: any = { attempts, lastAttempt: adm.firestore.FieldValue.serverTimestamp() };
 
     let disabled = false;
-    if (attempts >= 3) {
-      // disable the Firebase Auth user if they exist
+    console.log("[register-login-failure]", { email, attempts, shouldDisable: attempts > 3 });
+    if (attempts > 3) {
+      // disable the Firebase Auth user (we already know they exist)
       try {
         const u = await adm.auth().getUserByEmail(email);
+        console.log("[register-login-failure] found user, disabling:", { uid: u.uid, email: u.email, currentDisabled: u.disabled });
         await adm.auth().updateUser(u.uid, { disabled: true });
         docData.disabled = true;
         disabled = true;
+        console.log("[register-login-failure] successfully disabled user");
       } catch (e: any) {
-        // if user doesn't exist, just record attempts
         console.warn("[register-login-failure] could not disable user:", e?.message || e);
       }
     }

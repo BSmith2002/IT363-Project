@@ -38,50 +38,35 @@ async function verifyCallerIsAdmin(idToken: string) {
   return emails.length === 0 || emails.includes(callerEmail);
 }
 
-async function verifyCallerIsGcpAdmin(idToken: string) {
-  const adm = await initAdmin();
-  const decoded = await adm.auth().verifyIdToken(idToken);
-  const callerEmail = (decoded.email || "").toLowerCase();
-
-  try {
-    const { getGcpIamMembers } = await import("../../../../lib/gcp");
-    const members = await getGcpIamMembers();
-    return Array.isArray(members) && members.includes(callerEmail);
-  } catch (e) {
-    console.warn("[verifyCallerIsGcpAdmin] failed to fetch GCP IAM members:", e);
-    return false;
-  }
-}
-
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("authorization") || "";
     const idToken = authHeader.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : "";
     if (!idToken) return NextResponse.json({ error: "Missing ID token" }, { status: 401 });
 
-  const allowed = await verifyCallerIsGcpAdmin(idToken);
-  if (!allowed) return NextResponse.json({ error: "Not authorized - requires GCP-synced admin" }, { status: 403 });
-
-    const body = await req.json();
-    const email = (body?.email || "").toString().trim().toLowerCase();
-    if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
+    const allowed = await verifyCallerIsAdmin(idToken);
+    if (!allowed) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
     const adm = await initAdmin();
-    const user = await adm.auth().getUserByEmail(email);
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const snap = await adm.firestore().collection("loginFailures").get();
+    
+    const failures: Record<string, { attempts: number; disabled?: boolean; lastAttempt?: any }> = {};
+    snap.docs.forEach((doc: any) => {
+      const data = doc.data();
+      // Doc ID is base64 encoded email, decode it
+      try {
+        const email = Buffer.from(doc.id, "base64").toString("utf8");
+        failures[email] = {
+          attempts: data.attempts || 0,
+          disabled: data.disabled || false,
+          lastAttempt: data.lastAttempt
+        };
+      } catch (e) {
+        console.warn("Failed to decode email from doc ID:", doc.id);
+      }
+    });
 
-    await adm.auth().updateUser(user.uid, { disabled: false });
-
-    // Remove any recorded login failures for this email so the account is not immediately re-disabled
-    try {
-      const id = Buffer.from(email.toLowerCase().trim()).toString("base64");
-      await adm.firestore().collection("loginFailures").doc(id).delete();
-    } catch (e) {
-      // ignore if not found or error
-      console.warn("[enable-user] failed to delete loginFailures doc:", e);
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ failures });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
   }

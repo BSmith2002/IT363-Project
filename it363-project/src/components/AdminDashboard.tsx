@@ -2,10 +2,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import {
   addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query,
-  serverTimestamp, updateDoc, getDoc, setDoc
+  serverTimestamp, updateDoc, getDoc
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import Calendar from "@/components/Calendar";
@@ -695,6 +695,7 @@ function UsersTab() {
   const [user, setUser] = useState<null | { email: string }>(null);
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const [authUsers, setAuthUsers] = useState<{ uid: string; email?: string; displayName?: string; providerIds: string[]; disabled?: boolean }[]>([]);
+  const [loginFailures, setLoginFailures] = useState<Record<string, { attempts: number; disabled?: boolean; lastAttempt?: any }>>({});
   const [loadingAdmins, setLoadingAdmins] = useState(true);
   const [newEmail, setNewEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -703,6 +704,10 @@ function UsersTab() {
   const [createEmail, setCreateEmail] = useState("");
   const [createPassword, setCreatePassword] = useState("");
   const [createDisplayName, setCreateDisplayName] = useState("");
+  // info box visibility
+  const [showSecurityInfo, setShowSecurityInfo] = useState(true);
+  const [showPasswordInfo, setShowPasswordInfo] = useState(true);
+  const [showPrivilegesInfo, setShowPrivilegesInfo] = useState(true);
 
 
   // load admin emails (Firestore doc: admin/emails)
@@ -730,12 +735,16 @@ function UsersTab() {
 
   useEffect(() => {
     // keep user in state
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsubAuth = onAuthStateChanged(auth, (u) => {
       setUser(u ? { email: u.email ?? "" } : null);
     });
     loadAdminEmails();
     loadAuthUsers();
-    return () => unsub();
+    loadLoginFailures();
+    
+    return () => {
+      unsubAuth();
+    };
   }, []);
 
   async function getIdToken() {
@@ -840,12 +849,71 @@ function UsersTab() {
       if (!res.ok) {
         setMsg(j?.error || "Failed to enable user");
       } else {
-        setMsg("Enabled user");
+        setMsg("Enabled user and cleared login failure history");
         await loadAuthUsers();
+        await loadLoginFailures(); // Refresh login failures data
       }
     } catch (e: any) {
       console.error(e);
       setMsg(e?.message || "Failed to enable user");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disableAuthUser(email: string) {
+    if (!confirm(`Disable auth user ${email}? This will prevent them from logging in.`)) return;
+    setBusy(true);
+    try {
+      const token = await getIdToken();
+      if (!token) { setMsg("Not authenticated"); setBusy(false); return; }
+      const res = await fetch("/api/admin/disable-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ email }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setMsg(j?.error || "Failed to disable user");
+      } else {
+        setMsg("Disabled user");
+        await loadAuthUsers();
+        await loadLoginFailures(); // Refresh login failures data
+      }
+    } catch (e: any) {
+      console.error(e);
+      setMsg(e?.message || "Failed to disable user");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetUserPassword(email: string) {
+    if (!confirm(`Send password reset email to ${email}? They will receive an email with instructions to change their password.`)) return;
+    setBusy(true);
+    try {
+      // Use Firebase client-side method which actually sends emails
+      await sendPasswordResetEmail(auth, email, {
+        url: window.location.origin + '/adminpage', // Redirect back to admin page after reset
+        handleCodeInApp: false,
+        // Note: Expiration time is set in Firebase Console, not in code
+        // Default is 1 hour (3600 seconds)
+      });
+      setMsg(`Password reset email sent to ${email}. They will receive instructions to change their password.`);
+    } catch (e: any) {
+      console.error("Password reset error:", e);
+      if (e.code === "auth/user-not-found") {
+        setMsg("No account found with this email address.");
+      } else if (e.code === "auth/invalid-email") {
+        setMsg("Please enter a valid email address.");
+      } else if (e.code === "auth/too-many-requests") {
+        setMsg("Too many password reset attempts. Please try again later.");
+      } else {
+        setMsg(e?.message || "Failed to send reset email");
+      }
     } finally {
       setBusy(false);
     }
@@ -872,6 +940,32 @@ function UsersTab() {
     }
   }
 
+  async function loadLoginFailures() {
+    try {
+      const token = await getIdToken();
+      if (!token) { 
+        console.warn("No ID token for loading login failures"); 
+        return; 
+      }
+      
+      const res = await fetch("/api/admin/login-failures", {
+        method: "GET",
+        headers: { Authorization: "Bearer " + token }
+      });
+      
+      const j = await res.json();
+      if (!res.ok) {
+        console.warn("Failed to load login failures:", j?.error);
+      } else {
+        setLoginFailures(j.failures || {});
+      }
+    } catch (e) {
+      console.warn("Failed to load login failures:", e);
+    }
+  }
+
+
+
   async function addAdminEmail() {
     setMsg(null);
     const em = newEmail.trim().toLowerCase();
@@ -881,49 +975,68 @@ function UsersTab() {
     }
     setBusy(true);
     try {
-      const ref = doc(db, "admin", "emails");
-      const snap = await getDoc(ref);
-      const key = Date.now().toString();
-      if (snap.exists()) {
-        await updateDoc(ref, { [key]: em });
+      const token = await getIdToken();
+      if (!token) { setMsg("Not authenticated"); setBusy(false); return; }
+      
+      const res = await fetch("/api/admin/manage-admin-emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ email: em }),
+      });
+      
+      const j = await res.json();
+      if (!res.ok) {
+        if (res.status === 403) {
+          setMsg("Access denied: Only GCP admins can add admin emails");
+        } else {
+          setMsg(j?.error || "Failed to add admin email");
+        }
       } else {
-        await setDoc(ref, { [key]: em });
+        setNewEmail("");
+        await loadAdminEmails();
+        setMsg("Added admin email");
       }
-      setNewEmail("");
-      await loadAdminEmails();
-      setMsg("Added admin email");
     } catch (e: any) {
       console.error(e);
-      setMsg(e?.message || "Failed to add");
+      setMsg(e?.message || "Failed to add admin email");
     } finally {
       setBusy(false);
     }
   }
 
   async function removeAdminEmail(email: string) {
-    if (!confirm(`Remove ${email} from admin allowlist?`)) return;
+    if (!confirm(`Remove ${email} from admin allowlist? This action requires GCP admin privileges.`)) return;
     setBusy(true);
     try {
-      const ref = doc(db, "admin", "emails");
-      const snap = await getDoc(ref);
-      if (!snap.exists()) {
-        setMsg("No admin allowlist found");
-        return;
-      }
-      const data = snap.data() as Record<string, any>;
-      const next: Record<string, any> = {};
-      for (const [k, v] of Object.entries(data)) {
-        if ((v ?? "").toString().trim().toLowerCase() !== email.trim().toLowerCase()) {
-          next[k] = v;
+      const token = await getIdToken();
+      if (!token) { setMsg("Not authenticated"); setBusy(false); return; }
+      
+      const res = await fetch("/api/admin/manage-admin-emails", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      const j = await res.json();
+      if (!res.ok) {
+        if (res.status === 403) {
+          setMsg("Access denied: Only GCP admins can remove admin emails");
+        } else {
+          setMsg(j?.error || "Failed to remove admin email");
         }
+      } else {
+        await loadAdminEmails();
+        setMsg("Removed admin email");
       }
-      // overwrite doc with remaining entries (or empty object)
-      await setDoc(ref, next);
-      await loadAdminEmails();
-      setMsg("Removed admin email");
     } catch (e: any) {
       console.error(e);
-      setMsg(e?.message || "Failed to remove");
+      setMsg(e?.message || "Failed to remove admin email");
     } finally {
       setBusy(false);
     }
@@ -932,10 +1045,58 @@ function UsersTab() {
   return (
     <div className="space-y-6">
       
+      {/* System Overview Info Boxes */}
+      <div className="space-y-4">
+        {showSecurityInfo && (
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 relative">
+            <button
+              onClick={() => setShowSecurityInfo(false)}
+              className="absolute top-2 right-2 text-blue-600 hover:text-blue-800 text-lg font-bold"
+              title="Dismiss this info box"
+            >
+              ×
+            </button>
+            <h4 className="text-sm font-semibold text-blue-800 mb-1 pr-6">🔒 Auto-Disable Security</h4>
+            <p className="text-xs text-blue-700 mb-2">User accounts are automatically disabled after 3 failed login attempts. Enable button clears failure count and re-enables access.</p>
+            <p className="text-xs text-blue-600"><strong>Note:</strong> Firebase also has IP-based rate limiting that triggers after many failed attempts from the same location, separate from our user-specific tracking.</p>
+          </div>
+        )}
+
+        {showPasswordInfo && (
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200 relative">
+            <button
+              onClick={() => setShowPasswordInfo(false)}
+              className="absolute top-2 right-2 text-green-600 hover:text-green-800 text-lg font-bold"
+              title="Dismiss this info box"
+            >
+              ×
+            </button>
+            <h4 className="text-sm font-semibold text-green-800 mb-1 pr-6">📧 Password Reset</h4>
+            <p className="text-xs text-green-700 mb-1">Password reset emails are sent using Firebase's built-in service. Users can also use the "Forgot Password" link for self-service reset.</p>
+            <p className="text-xs text-green-600"><strong>Expiration:</strong> Reset links expire after 1 hour by default.</p>
+          </div>
+        )}
+
+        {showPrivilegesInfo && (
+          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 relative">
+            <button
+              onClick={() => setShowPrivilegesInfo(false)}
+              className="absolute top-2 right-2 text-amber-600 hover:text-amber-800 text-lg font-bold"
+              title="Dismiss this info box"
+            >
+              ×
+            </button>
+            <h4 className="text-sm font-semibold text-amber-800 mb-1 pr-6">⚠️ Admin Privileges Required</h4>
+            <p className="text-xs text-amber-700 mb-1">Some actions require GCP admin privileges: adding/removing admin emails, enabling/disabling users.</p>
+            <p className="text-xs text-amber-600"><strong>Access:</strong> Ensure your account has proper Firebase project permissions for user management operations.</p>
+          </div>
+        )}
+      </div>
+
       <div className="rounded-2xl border border-black/10 p-5 bg-white max-w-3xl mx-auto w-full">
       {msg && <div className="text-md font-semibold text-red-600 mb-3">{msg}</div>}
         <h2 className="text-xl font-semibold mb-2">Manage Admin Emails</h2>
-  <p className="text-sm text-black/70 mb-4">Add or remove emails from the admin allowlist for google authentication and password login(Firestore doc: <code>admin/emails</code>).</p>
+        <p className="text-sm text-black/70 mb-4">Add or remove emails from the admin allowlist for Google authentication and password login. <strong>Note:</strong> Adding/removing admin emails requires GCP admin privileges.</p>
 
         <div className="flex gap-2 mb-4">
           <input
@@ -945,7 +1106,14 @@ function UsersTab() {
             onChange={e => setNewEmail(e.target.value)}
             disabled={busy}
           />
-          <button onClick={addAdminEmail} disabled={busy} className="rounded bg-red-600 text-white px-4 py-2 hover:opacity-90">Add</button>
+          <button 
+            onClick={addAdminEmail} 
+            disabled={busy} 
+            className="rounded bg-red-600 text-white px-4 py-2 hover:opacity-90 disabled:opacity-50"
+            title="Requires GCP admin privileges"
+          >
+            Add (GCP)
+          </button>
         </div>
 
         <div>
@@ -962,7 +1130,13 @@ function UsersTab() {
                     <div className="font-medium">{em}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => removeAdminEmail(em)} className="rounded bg-red-700 text-white px-3 py-1">Remove</button>
+                    <button 
+                      onClick={() => removeAdminEmail(em)} 
+                      className="rounded bg-red-700 text-white px-3 py-1 hover:opacity-90"
+                      title="Requires GCP admin privileges"
+                    >
+                      Remove (GCP)
+                    </button>
                   </div>
                 </li>
               ))}
@@ -1011,21 +1185,49 @@ function UsersTab() {
                     <div className="font-medium flex items-center gap-2">
                       {u.email ?? <em>No email</em>}
                       {u.disabled ? (
-                        <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded bg-yellow-300 text-black">Disabled</span>
+                        <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded bg-yellow-300 text-black">
+                          {loginFailures[u.email || ""]?.attempts >= 3 ? "Auto-Disabled" : "Disabled"}
+                        </span>
                       ) : (
                         <span className="ml-2 inline-block text-xs px-2 py-0.5 rounded bg-green-100 text-green-800">Active</span>
                       )}
                     </div>
-                    <div className="text-sm text-black/60">{u.displayName ?? ""} {u.providerIds && u.providerIds.length ? `• ${u.providerIds.join(", ")}` : ""}</div>
+                    <div className="text-sm text-black/60">
+                      {u.displayName ?? ""} {u.providerIds && u.providerIds.length ? `• ${u.providerIds.join(", ")}` : ""}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {u.providerIds.includes('google.com') && (
                       <span className="text-sm text-black/50">Google</span>
                     )}
                     {u.disabled ? (
-                      <button onClick={() => enableAuthUser(u.email ?? "")} className="rounded bg-green-600 text-white px-3 py-1 hover:opacity-90">Enable</button>
+                      <button 
+                        onClick={() => enableAuthUser(u.email ?? "")} 
+                        className="rounded bg-green-600 text-white px-3 py-1 hover:opacity-90"
+                        disabled={busy}
+                        title="Enable user and clear login failure count. Requires GCP admin privileges."
+                      >
+                        Enable
+                      </button>
                     ) : (
-                      <button onClick={() => enableAuthUser(u.email ?? "")} disabled className="rounded bg-gray-200 text-gray-600 px-3 py-1">Enable</button>
+                      <button 
+                        onClick={() => disableAuthUser(u.email ?? "")} 
+                        className="rounded bg-orange-600 text-white px-3 py-1 hover:opacity-90"
+                        disabled={busy}
+                        title="Manually disable user account. Note: Accounts auto-disable after 3 failed login attempts. Requires GCP admin privileges."
+                      >
+                        Disable
+                      </button>
+                    )}
+                    {/* Only show reset password for password provider users */}
+                    {u.providerIds.includes('password') && (
+                      <button 
+                        onClick={() => resetUserPassword(u.email ?? "")} 
+                        className="rounded bg-blue-600 text-white px-3 py-1 hover:opacity-90"
+                        disabled={busy}
+                      >
+                        Send Reset Email
+                      </button>
                     )}
                     <button onClick={() => deleteAuthUser(u.email ?? "")} className="rounded bg-black/10 px-3 py-1 hover:bg-black/20">Delete Auth</button>
                   </div>
@@ -1033,8 +1235,9 @@ function UsersTab() {
               ))}
             </ul>
           )}
-          <div className="mt-3">
+          <div className="mt-3 flex gap-2 flex-wrap">
             <button onClick={loadAuthUsers} className="rounded bg-black/10 px-3 py-1 hover:bg-black/20">Refresh Auth Users</button>
+            <button onClick={loadLoginFailures} className="rounded bg-black/10 px-3 py-1 hover:bg-black/20">Refresh Login Failures</button>
           </div>
         </div>
       </div>
