@@ -19,6 +19,7 @@ type StationEvent = {
   startTime: string;
   endTime: string;
   menuId: string;
+  mapsUrl?: string;
   createdAt?: any;
 };
 
@@ -214,12 +215,13 @@ function DaysTab({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [menuId, setMenuId] = useState<string>("");
+  const [mapsUrl, setMapsUrl] = useState("");
 
   // Build presets from ALL events (group by title, take most recent by createdAt)
   useEffect(() => {
     const ref = collection(db, "events");
     const unsub = onSnapshot(ref, (snap) => {
-      type Acc = Record<string, { ts: number; location?: string; startTime?: string; endTime?: string; menuId?: string }>;
+      type Acc = Record<string, { ts: number; location?: string; startTime?: string; endTime?: string; menuId?: string; mapsUrl?: string }>;
       const acc: Acc = {};
       for (const d of snap.docs) {
         const data = d.data() as any;
@@ -235,7 +237,8 @@ function DaysTab({
             location: data.location ?? "",
             startTime: data.startTime ?? "",
             endTime: data.endTime ?? "",
-            menuId: data.menuId ?? ""
+            menuId: data.menuId ?? "",
+            mapsUrl: data.mapsUrl ?? ""
           };
         }
       }
@@ -277,6 +280,7 @@ function DaysTab({
     setStartTime("");
     setEndTime("");
     setMenuId("");
+    setMapsUrl("");
     setPresetTitle("");
     setUseCustom(false);
   }
@@ -307,6 +311,7 @@ function DaysTab({
       startTime: startTime.trim(),
       endTime: endTime.trim(),
       menuId: menuId || "",
+      mapsUrl: mapsUrl.trim(),
       createdAt: serverTimestamp(),
     });
     resetForm();
@@ -398,23 +403,7 @@ function DaysTab({
             </button>
           </div>
 
-          {/* Menu selection  */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-black/70">Menu (optional)</label>
-            <select
-              className="rounded px-3 py-2 border border-black/20"
-              value={menuId}
-              onChange={e => setMenuId(e.target.value)}
-              disabled={!selectedDate}
-            >
-              <option value="">— None —</option>
-              {menus.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name ?? m.id}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* We've moved the menu selection to the main form grid */}
         </div>
 
 
@@ -457,6 +446,32 @@ function DaysTab({
                 value={endTime}
                 onChange={e => setEndTime(e.target.value)}
                 placeholder="e.g., 2:00 PM"
+                disabled={!selectedDate}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-black/70">Menu</label>
+              <select
+                className="rounded px-3 py-2 border border-black/20"
+                value={menuId}
+                onChange={e => setMenuId(e.target.value)}
+                disabled={!selectedDate}
+              >
+                <option value="">— None —</option>
+                {menus.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.name ?? m.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-black/70">Google Maps Link</label>
+              <input
+                className="rounded px-3 py-2 border border-black/20"
+                value={mapsUrl}
+                onChange={e => setMapsUrl(e.target.value)}
+                placeholder="e.g., https://goo.gl/maps/..."
                 disabled={!selectedDate}
               />
             </div>
@@ -514,6 +529,9 @@ function DaysTab({
                 <div className="text-sm text-black/70">
                   📍 {ev.location || "No location"}
                   {ev.menuId ? ` • Menu: ${menuMap.get(ev.menuId) ?? ev.menuId}` : ""}
+                  {ev.mapsUrl && (
+                    <span> • <a href={ev.mapsUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">View on Maps 🗺️</a></span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -540,6 +558,14 @@ function DaysTab({
 function ItemsTab({ menus }: { menus: MenuDoc[] }) {
   const [activeMenuId, setActiveMenuId] = useState<string>("");
   const [activeSectionId, setActiveSectionId] = useState<string>("");
+  const [showNewMenuForm, setShowNewMenuForm] = useState(false);
+  const [showNewSectionForm, setShowNewSectionForm] = useState(false);
+
+  // New menu draft
+  const [menuDraft, setMenuDraft] = useState({ name: "" });
+  
+  // New section draft
+  const [sectionDraft, setSectionDraft] = useState({ title: "" });
 
   // New item draft
   const [draft, setDraft] = useState<{ name: string; desc: string; price: string; photoUrl: string }>({
@@ -581,44 +607,215 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
 
   return (
     <div className="space-y-8">
-      {/* Menu picker */}
+      {/* Menu Management */}
       <div className="rounded-2xl border border-black/10 p-5 bg-white">
-        <h2 className="text-xl font-semibold mb-4">Select Menu to Edit</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Manage Menus</h2>
+          <button
+            onClick={() => setShowNewMenuForm(true)}
+            className="rounded bg-red-600 text-white px-3 py-1 hover:opacity-90"
+          >
+            Create New Menu
+          </button>
+        </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-black/70">Menu</label>
-            <select
-              className="rounded px-3 py-2 border border-black/20"
-              value={activeMenuId}
-              onChange={(e) => setActiveMenuId(e.target.value)}
-            >
-              <option value="">— Choose a menu —</option>
-              {menus.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name ?? m.id}
-                </option>
-              ))}
-            </select>
+        {/* New Menu Form */}
+        {showNewMenuForm && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-black/10">
+            <h3 className="text-lg font-medium mb-3">Create New Menu</h3>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Menu Name"
+                className="flex-1 rounded px-3 py-2 border border-black/20"
+                value={menuDraft.name}
+                onChange={e => setMenuDraft({ name: e.target.value })}
+              />
+              <button
+                onClick={async () => {
+                  if (!menuDraft.name.trim()) return;
+                  await addDoc(collection(db, "menus"), {
+                    name: menuDraft.name.trim(),
+                    sections: [],
+                    createdAt: serverTimestamp()
+                  });
+                  setMenuDraft({ name: "" });
+                  setShowNewMenuForm(false);
+                }}
+                className="rounded bg-red-600 text-white px-4 py-2 hover:opacity-90"
+              >
+                Create Menu
+              </button>
+              <button
+                onClick={() => {
+                  setMenuDraft({ name: "" });
+                  setShowNewMenuForm(false);
+                }}
+                className="rounded bg-black/10 px-4 py-2 hover:bg-black/20"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
+        )}
 
+        {/* Menu Selection and Section Management */}
+        <div className="grid gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm text-black/70">Section</label>
-            <select
-              className="rounded px-3 py-2 border border-black/20"
-              value={activeSectionId}
-              onChange={(e) => setActiveSectionId(e.target.value)}
-              disabled={!activeMenuId || sections.length === 0}
-            >
-              {sections.length === 0 ? (
-                <option value="">No sections in this menu</option>
-              ) : (
-                sections.map(s => (
-                  <option key={s.id} value={s.id}>{s.title}</option>
-                ))
+            <label className="text-sm text-black/70">Select Menu to Edit</label>
+            <div className="flex gap-2">
+              <select
+                className="flex-1 rounded px-3 py-2 border border-black/20"
+                value={activeMenuId}
+                onChange={(e) => {
+                  setActiveMenuId(e.target.value);
+                  setActiveSectionId("");
+                }}
+              >
+                <option value="">— Choose a menu —</option>
+                {menus.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.name ?? m.id}
+                  </option>
+                ))}
+              </select>
+              {activeMenuId && (
+                <button
+                  onClick={async () => {
+                    if (!confirm("Delete this menu? This cannot be undone.")) return;
+                    await deleteDoc(doc(db, "menus", activeMenuId));
+                    setActiveMenuId("");
+                  }}
+                  className="rounded bg-red-700 text-white px-3 py-1 hover:opacity-90"
+                >
+                  Delete Menu
+                </button>
               )}
-            </select>
+            </div>
           </div>
+
+          {activeMenuId && (
+            <>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm text-black/70">Menu Sections</label>
+                  <button
+                    onClick={() => setShowNewSectionForm(true)}
+                    className="text-sm text-red-600 hover:underline"
+                  >
+                    + Add New Section
+                  </button>
+                </div>
+
+                {/* New Section Form */}
+                {showNewSectionForm && (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-black/10">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Section Title"
+                        className="flex-1 rounded px-3 py-2 border border-black/20"
+                        value={sectionDraft.title}
+                        onChange={e => setSectionDraft({ title: e.target.value })}
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!sectionDraft.title.trim()) return;
+                          const menu = menus.find(m => m.id === activeMenuId);
+                          if (!menu) return;
+
+                          const nextSections = [
+                            ...(menu.sections ?? []),
+                            {
+                              id: crypto.randomUUID(),
+                              title: sectionDraft.title.trim(),
+                              items: []
+                            }
+                          ];
+
+                          await updateDoc(doc(db, "menus", activeMenuId), {
+                            sections: nextSections
+                          });
+
+                          setSectionDraft({ title: "" });
+                          setShowNewSectionForm(false);
+                        }}
+                        className="rounded bg-red-600 text-white px-3 py-1 hover:opacity-90"
+                      >
+                        Add Section
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSectionDraft({ title: "" });
+                          setShowNewSectionForm(false);
+                        }}
+                        className="rounded bg-black/10 px-3 py-1 hover:bg-black/20"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <select
+                  className="rounded px-3 py-2 border border-black/20"
+                  value={activeSectionId}
+                  onChange={(e) => setActiveSectionId(e.target.value)}
+                >
+                  <option value="">— Select a section —</option>
+                  {sections.map(s => (
+                    <option key={s.id} value={s.id}>{s.title}</option>
+                  ))}
+                </select>
+
+                {activeSectionId && (
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={async () => {
+                        const menu = menus.find(m => m.id === activeMenuId);
+                        if (!menu) return;
+
+                        const section = menu.sections?.find(s => s.id === activeSectionId);
+                        if (!section) return;
+
+                        const newTitle = prompt("Enter new section title:", section.title);
+                        if (!newTitle?.trim()) return;
+
+                        const nextSections = menu.sections?.map(s =>
+                          s.id === activeSectionId
+                            ? { ...s, title: newTitle.trim() }
+                            : s
+                        );
+
+                        await updateDoc(doc(db, "menus", activeMenuId), {
+                          sections: nextSections
+                        });
+                      }}
+                      className="text-sm text-black/70 hover:text-black"
+                    >
+                      Rename Section
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("Delete this section and all its items?")) return;
+                        const menu = menus.find(m => m.id === activeMenuId);
+                        if (!menu) return;
+
+                        const nextSections = menu.sections?.filter(s => s.id !== activeSectionId) ?? [];
+                        await updateDoc(doc(db, "menus", activeMenuId), {
+                          sections: nextSections
+                        });
+                        setActiveSectionId("");
+                      }}
+                      className="text-sm text-red-600 hover:text-red-700"
+                    >
+                      Delete Section
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
