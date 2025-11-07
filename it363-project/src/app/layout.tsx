@@ -1,4 +1,6 @@
 import "./globals.css";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata = {
   title: "The Station Foodtruck",
@@ -16,7 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         suppressHydrationWarning tells React to ignore hydration mismatches
         for this element subtree, which silences the warning.
       */}
-      <body suppressHydrationWarning className="min-h-screen">{children}</body>
+      <body suppressHydrationWarning className="min-h-screen bg-neutral-900 text-white">
+        <Header />
+        <div className="content-wrapper">{children}</div>
+        <Footer />
+      </body>
     </html>
   );
 }

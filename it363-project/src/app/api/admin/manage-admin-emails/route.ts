@@ -114,6 +114,24 @@ export async function POST(req: Request) {
   }
 }
 
+export async function GET(req: Request) {
+  // Check GCP admin status - just returns success/failure for permission checking
+  try {
+    const authHeader = req.headers.get("authorization") || "";
+    const idToken = authHeader.startsWith("Bearer ")
+      ? authHeader.replace("Bearer ", "")
+      : "";
+    if (!idToken) return NextResponse.json({ error: "Missing ID token" }, { status: 401 });
+
+    const allowed = await verifyCallerIsGcpAdmin(idToken);
+    if (!allowed) return NextResponse.json({ error: "Not authorized - requires GCP admin" }, { status: 403 });
+
+    return NextResponse.json({ gcpAdmin: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request) {
   // Remove admin email - requires GCP admin
   try {

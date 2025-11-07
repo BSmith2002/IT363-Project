@@ -12,6 +12,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import AdminDashboard from "@/components/AdminDashboard";
+import Link from "next/link";
 
 export default function AdminLoginPortal() {
   const [user, setUser] = useState<null | { email: string }>(null);
@@ -229,6 +230,10 @@ export default function AdminLoginPortal() {
           >
             Forgot your password?
           </a>
+        </div>
+
+        <div className="mt-2 text-center">
+          <Link href="/" className="text-sm text-white/70 hover:text-white underline">Return to Home</Link>
         </div>
       </div>
     </div>

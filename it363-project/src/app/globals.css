@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --header-height: 64px;
 }
 
 @theme inline {
@@ -23,4 +24,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Header visibility helpers: when header is visible, push content down by header height.
+   The Header component toggles `header-visible` / `header-hidden` on <html>. */
+/* By default the content-wrapper reserves space for the header so the header
+   won't visually cover content on first paint (before client JS runs). */
+.content-wrapper {
+  padding-top: var(--header-height);
+  transition: padding-top 200ms ease;
+}
+
+/* When the header is hidden we remove the extra padding so content moves up. */
+html.header-hidden body .content-wrapper {
+  padding-top: 0;
+  transition: padding-top 200ms ease;
+}
+
+/* Ensure the header transitions smoothly when hiding/showing */
+header {
+  will-change: transform;
 }

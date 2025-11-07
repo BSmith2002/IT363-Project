@@ -59,15 +59,68 @@ export default function AdminDashboard() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isGcpAdmin, setIsGcpAdmin] = useState<boolean>(false);
+  const [checkingGcpAccess, setCheckingGcpAccess] = useState<boolean>(true);
 
-  // Tabs
-  const TABS = ["DAYS", "ITEMS", "USERS"] as const;
-  type Tab = typeof TABS[number];
+  // Tabs - dynamically filter based on GCP admin status
+  const ALL_TABS = ["DAYS", "ITEMS", "USERS"] as const;
+  const TABS = useMemo(() => {
+    return isGcpAdmin ? ALL_TABS : ALL_TABS.filter(t => t !== "USERS");
+  }, [isGcpAdmin]);
+  type Tab = typeof ALL_TABS[number];
   const [tab, setTab] = useState<Tab>("DAYS");
 
   // Shared: Menus
   const [menus, setMenus] = useState<MenuDoc[]>([]);
   const menuMap = useMemo(() => new Map(menus.map(m => [m.id, m.name ?? m.id])), [menus]);
+
+  // Check if user is GCP admin
+  async function checkGcpAdminStatus() {
+    if (!user?.email) {
+      setIsGcpAdmin(false);
+      setCheckingGcpAccess(false);
+      return;
+    }
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        setIsGcpAdmin(false);
+        setCheckingGcpAccess(false);
+        return;
+      }
+
+      // Try to call an admin API that requires GCP privileges
+      // We'll use the manage-admin-emails endpoint since it requires GCP access
+      const response = await fetch("/api/admin/manage-admin-emails", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      console.log(`GCP admin check for ${user.email}: ${response.status} ${response.statusText}`);
+
+      // If we get 200, user has GCP admin access
+      // If we get 403, user doesn't have GCP admin access but might have regular admin access
+      // If we get 401, user isn't authenticated properly
+      if (response.ok) {
+        console.log(`✅ ${user.email} has GCP admin access`);
+        setIsGcpAdmin(true);
+      } else if (response.status === 403) {
+        // 403 means authenticated but not GCP admin
+        console.log(`❌ ${user.email} does not have GCP admin access (403)`);
+        setIsGcpAdmin(false);
+      } else {
+        // Other errors (401, 500, etc.) - assume not GCP admin
+        console.log(`❌ ${user.email} GCP admin check failed: ${response.status}`);
+        setIsGcpAdmin(false);
+      }
+    } catch (error) {
+      console.warn("Failed to check GCP admin status:", error);
+      setIsGcpAdmin(false);
+    } finally {
+      setCheckingGcpAccess(false);
+    }
+  }
 
   // ===== Auth =====
   useEffect(() => {
@@ -75,6 +128,24 @@ export default function AdminDashboard() {
       setUser(u ? { email: u.email ?? "" } : null);
     });
   }, []);
+
+  // Check GCP admin status when user changes
+  useEffect(() => {
+    if (user) {
+      setCheckingGcpAccess(true);
+      checkGcpAdminStatus();
+    } else {
+      setIsGcpAdmin(false);
+      setCheckingGcpAccess(false);
+    }
+  }, [user]);
+
+  // Reset tab if user loses access to USERS tab
+  useEffect(() => {
+    if (!isGcpAdmin && tab === "USERS") {
+      setTab("DAYS");
+    }
+  }, [isGcpAdmin, tab]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -148,6 +219,15 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-semibold">Admin</h1>
               <p className="text-sm text-black/70">
                 Signed in as <span className="font-medium">{user.email}</span>
+                {!checkingGcpAccess && (
+                  <span className={`ml-2 inline-block text-xs px-2 py-0.5 rounded ${
+                    isGcpAdmin 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-blue-100 text-blue-800"
+                  }`}>
+                    {isGcpAdmin ? "GCP Admin" : "Standard Admin"}
+                  </span>
+                )}
               </p>
             </div>
             <button onClick={handleLogout} className="rounded bg-red-700 text-white px-3 py-1 hover:opacity-90">
@@ -157,28 +237,45 @@ export default function AdminDashboard() {
 
           {/* Tabs */}
           <div className="sticky top-0 z-10 mb-6 rounded-xl border border-black/10 bg-white/80 backdrop-blur">
-            <div className="flex">
-              {TABS.map(t => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`flex-1 px-4 py-3 text-center font-medium transition ${
-                    tab === t ? "bg-red-700 text-white" : "text-black hover:bg-black/5"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            {checkingGcpAccess ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="text-black/60">Checking permissions...</div>
+              </div>
+            ) : (
+              <div className="flex">
+                {TABS.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={`flex-1 px-4 py-3 text-center font-medium transition ${
+                      tab === t ? "bg-red-700 text-white" : "text-black hover:bg-black/5"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {tab === "DAYS" ? (
+          {checkingGcpAccess ? (
+            <div className="text-center py-8">
+              <div className="text-black/60">Loading...</div>
+            </div>
+          ) : tab === "DAYS" ? (
             <DaysTab menus={menus} menuMap={menuMap} />
           ) : tab === "ITEMS" ? (
             <ItemsTab menus={menus} />
-          ) : (
-            <UsersTab />
-          )}
+          ) : tab === "USERS" ? (
+            isGcpAdmin ? (
+              <UsersTab />
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-red-600 font-medium">Access Denied</div>
+                <div className="text-black/60 mt-2">User management requires GCP admin privileges.</div>
+              </div>
+            )
+          ) : null}
         </div>
       )}
     </div>
