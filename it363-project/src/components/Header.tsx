@@ -1,20 +1,87 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 export default function Header() {
-  const router = useRouter();
+  const [visible, setVisible] = useState(true);
+  const visibleRef = useRef<boolean>(visible);
+  const pathname = usePathname();
+
+  // If we're on an admin route or auth helper pages (forgot password), don't render the header.
+  // Also mark header as hidden so the content-wrapper doesn't reserve header space.
+  const isAdminRoute =
+    typeof pathname === "string" && (
+      pathname === "/admin" ||
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/adminpage") ||
+      pathname === "/forgot-password" ||
+      pathname.startsWith("/forgot")
+    );
+
+  useEffect(() => {
+    if (isAdminRoute) {
+      // ensure content is not padded for admin pages
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.add("header-hidden");
+        document.documentElement.classList.remove("header-visible");
+      }
+      return;
+    }
+    // set initial class so content gets correct padding
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.add("header-visible");
+      document.documentElement.classList.remove("header-hidden");
+    }
+    const lastYRef = { current: typeof window !== "undefined" ? window.scrollY : 0 };
+    const tickingRef = { current: false };
+
+    function onScroll() {
+      if (tickingRef.current) return;
+      tickingRef.current = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const lastY = lastYRef.current;
+        // Immediate hide on any downward movement, immediate show on any upward movement.
+        const delta = y - lastY;
+
+        if (delta > 0 && visibleRef.current) {
+          // scrolled down -> hide immediately
+          visibleRef.current = false;
+          setVisible(false);
+          document.documentElement.classList.remove("header-visible");
+          document.documentElement.classList.add("header-hidden");
+        } else if (delta < 0 && !visibleRef.current) {
+          // scrolled up -> show immediately
+          visibleRef.current = true;
+          setVisible(true);
+          document.documentElement.classList.add("header-visible");
+          document.documentElement.classList.remove("header-hidden");
+        }
+
+        // update lastY for next frame
+        lastYRef.current = y;
+        tickingRef.current = false;
+      });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // header classes: when visible -> fixed and red; when hidden -> translate up
+  const headerClass = visible
+    ? "fixed top-0 left-0 right-0 bg-red-800 text-white shadow transition-transform duration-200"
+    : "fixed top-0 left-0 right-0 -translate-y-full bg-red-800 text-white transition-transform duration-200";
+
+  if (isAdminRoute) return null;
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-red-800 text-white z-50 shadow">
+    <header className={headerClass} style={{ height: "64px" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <img
-            src="/thestationlogo2.png"
-            alt="The Station logo"
-            className="h-16 w-auto"
-          />
+          <img src="/thestationlogo2.png" alt="The Station logo" className="h-16 w-auto" />
           <nav>
             <ul className="flex items-center gap-6">
               <li>
@@ -32,24 +99,14 @@ export default function Header() {
                 </a>
               </li>
               <li>
-                <button
-                  type="button"
-                  aria-label="Go to Home"
-                  onClick={() => router.push("/")}
-                  className="text-lg hover:underline"
-                >
+                <Link href="/" className="text-lg hover:underline">
                   Home
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  aria-label="About Us"
-                  onClick={() => router.push("/About Us")}
-                  className="text-lg hover:underline"
-                >
+                <Link href="/about" className="text-lg hover:underline">
                   About Us
-                </button>
+                </Link>
               </li>
             </ul>
           </nav>
