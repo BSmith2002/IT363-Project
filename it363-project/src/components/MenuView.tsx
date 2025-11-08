@@ -50,16 +50,15 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
   if (!menu) return <div className="mt-6 text-gray-400">No menu found.</div>;
 
   return (
-    <div className="w-full max-w-3xl mt-8 text-white">
-      {menu.name && <h3 className="text-2xl font-semibold mb-3">{menu.name}</h3>}
+    <div className="w-full max-w-3xl mt-8 text-neutral-900">
 
       {(menu.sections ?? []).map((section) => (
         <div key={section.id} className="mb-6">
-          <div className="bg-red-800 text-white px-3 py-2 rounded-t-xl font-semibold tracking-wide">
+          <div className="bg-red-600 text-white px-3 py-2 rounded-t-xl font-semibold tracking-wide">
             {section.title}
           </div>
 
-          <ul className="divide-y divide-white/10 rounded-b-xl border border-t-0 border-white/10 bg-white/5">
+          <ul className="divide-y divide-neutral-200 rounded-b-xl border border-t-0 border-neutral-200 bg-white">
             {(section.items ?? []).map((it) => {
               // wants to use Firestore photoUrl; otherwise use local /public/(name).jpg (will get used
               // once it is paid for and functional)
@@ -69,8 +68,8 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
                 <li key={it.id} className="flex items-start justify-between gap-3 p-3">
                   <div className="flex-1 pr-3">
                     <div className="font-semibold uppercase tracking-wide">{it.name}</div>
-                    {it.desc && <div className="text-sm text-gray-300">{it.desc}</div>}
-                    {it.price && <div className="text-sm mt-1">${it.price}</div>}
+                      {it.desc && <div className="text-sm text-neutral-600">{it.desc}</div>}
+                      {it.price && <div className="text-sm mt-1 font-medium text-neutral-700">${it.price}</div>}
                   </div>
 
                   {/* local photo for now */}
@@ -78,7 +77,7 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
                     <img
                       src={initialSrc}
                       alt={it.name}
-                      className="h-16 w-16 rounded-lg object-cover ring-1 ring-white/20"
+                      className="h-16 w-16 rounded-lg object-cover ring-1 ring-neutral-200"
                       onError={(e) => {
                         const img = e.currentTarget as HTMLImageElement;
                         img.onerror = null;

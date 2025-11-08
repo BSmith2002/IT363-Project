@@ -33,9 +33,9 @@ function ClientHome() {
       <EventList
         date={selectedDate}
         selectedEventId={selectedEventId}
-        onSelectEvent={(eventId, menuId) => {
-          setSelectedEventId(eventId);
-          setSelectedMenuId(menuId);
+        onSelectEvent={(event: any) => {
+          setSelectedEventId(event?.eventId ?? null);
+          setSelectedMenuId(event?.menuId ?? null);
         }}
       />
 

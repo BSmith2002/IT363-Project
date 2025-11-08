@@ -108,6 +108,14 @@ export default function Header() {
                   About Us
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/book"
+                  className="text-sm font-semibold rounded-full bg-white text-red-800 px-4 py-2 shadow hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
+                >
+                  Book with us!
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
