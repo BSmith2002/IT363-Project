@@ -10,6 +10,8 @@ export default function BookPage() {
   const [town, setTown] = useState("");
   const [date, setDate] = useState<string>("");
   const [details, setDetails] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -25,6 +27,17 @@ export default function BookPage() {
       setErr("Please provide your name, town, and a requested date.");
       return;
     }
+    if (!phone.trim() && !email.trim()) {
+      setErr("Please provide either a phone number or email so we can reach you.");
+      return;
+    }
+    if (email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        setErr("Please provide a valid email address (e.g., you@example.com).");
+        return;
+      }
+    }
     setBusy(true);
     try {
       if (siteKey) {
@@ -36,14 +49,23 @@ export default function BookPage() {
       const res = await fetch("/api/book-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), business: business.trim(), town: town.trim(), date: date.trim(), description: details.trim(), captchaToken })
+        body: JSON.stringify({ 
+          name: name.trim(), 
+          business: business.trim(), 
+          town: town.trim(), 
+          date: date.trim(), 
+          description: details.trim(), 
+          phone: phone.trim(),
+          email: email.trim(),
+          captchaToken 
+        })
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(j?.error || "We couldn't send your request. Try emailing us directly.");
       }
       setMsg("Thanks! Your booking request has been sent. We'll reach out soon.");
-      setName(""); setBusiness(""); setTown(""); setDate(""); setDetails("");
+      setName(""); setBusiness(""); setTown(""); setDate(""); setDetails(""); setPhone(""); setEmail("");
       setCaptchaToken(null);
     } catch (e: any) {
       setErr(e?.message || "Something went wrong sending your request.");
@@ -54,7 +76,7 @@ export default function BookPage() {
 
   const mailtoHref = (() => {
     const subject = encodeURIComponent("Booking Request");
-    const body = encodeURIComponent(`Name: ${name}\nBusiness/Personal: ${business}\nTown: ${town}\nRequested Date: ${date}\n\nDetails:\n${details}`);
+    const body = encodeURIComponent(`Name: ${name}\nBusiness/Personal: ${business}\nTown: ${town}\nRequested Date: ${date}\nPhone: ${phone}\nEmail: ${email}\n\nDetails:\n${details}`);
     return `mailto:speck4193@gmail.com?subject=${subject}&body=${body}`;
   })();
 
@@ -110,6 +132,32 @@ export default function BookPage() {
                 onChange={e => setDate(e.target.value)}
                 required
               />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-neutral-700">Phone Number</label>
+              <input
+                type="tel"
+                className="rounded-md border border-neutral-300 px-3 py-2"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="(309) 555-1234"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-neutral-700">Email Address</label>
+              <input
+                type="email"
+                className="rounded-md border border-neutral-300 px-3 py-2"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1 sm:col-span-2">
+              <p className="text-xs text-neutral-500">* At least one contact method (phone or email) is required so we can reach you.</p>
             </div>
 
             <div className="flex flex-col gap-1 sm:col-span-2">

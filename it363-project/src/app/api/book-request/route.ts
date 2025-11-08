@@ -9,10 +9,24 @@ export async function POST(req: NextRequest) {
     const town = String(data?.town || "").trim();
     const date = String(data?.date || "").trim();
     const description = String(data?.description || "").trim();
+    const phone = String(data?.phone || "").trim();
+    const email = String(data?.email || "").trim();
     const captchaToken = String(data?.captchaToken || "").trim();
 
     if (!name || !town || !date) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (!phone && !email) {
+      return NextResponse.json({ error: "Please provide either a phone number or email" }, { status: 400 });
+    }
+
+    // Validate email format if provided
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json({ error: "Please provide a valid email address (e.g., you@example.com)" }, { status: 400 });
+      }
     }
 
     // Optional Cloudflare Turnstile verification if secret key present
@@ -70,10 +84,12 @@ export async function POST(req: NextRequest) {
       `Business/Personal: ${business || "Personal"}`,
       `Town: ${town}`,
       `Requested Date: ${date}`,
+      phone ? `Phone: ${phone}` : "",
+      email ? `Email: ${email}` : "",
       "",
       "Description:",
       description || "(none)",
-    ].join("\n");
+    ].filter(Boolean).join("\n");
 
     const html = `
       <h2>New Booking Request</h2>
@@ -81,6 +97,8 @@ export async function POST(req: NextRequest) {
       <p><strong>Business/Personal:</strong> ${escapeHtml(business || "Personal")}</p>
       <p><strong>Town:</strong> ${escapeHtml(town)}</p>
       <p><strong>Requested Date:</strong> ${escapeHtml(date)}</p>
+      ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
+      ${email ? `<p><strong>Email:</strong> ${escapeHtml(email)}</p>` : ""}
       <p><strong>Description:</strong></p>
       <pre style="white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace">${escapeHtml(description || "(none)")}</pre>
     `;
