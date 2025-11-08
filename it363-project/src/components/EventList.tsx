@@ -3,7 +3,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 
-type StationEvent = {
+export type StationEvent = {
   id: string;
   dateStr: string;
   title: string;
@@ -11,6 +11,9 @@ type StationEvent = {
   startTime: string;
   endTime: string;
   menuId: string;
+  mapsUrl?: string;
+  mapsLabel?: string;
+  mapsProvider?: string | null;
 };
 
 export default function EventList({
@@ -20,7 +23,7 @@ export default function EventList({
 }: {
   date: string | null;
   selectedEventId: string | null;
-  onSelectEvent: (id: string, menuId: string) => void;
+  onSelectEvent: (event: StationEvent) => void;
 }) {
   const [events, setEvents] = useState<StationEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,10 +67,10 @@ export default function EventList({
                 </div>
               </div>
               <button
-                onClick={() => onSelectEvent(ev.id, ev.menuId)}
+                onClick={() => onSelectEvent(ev)}
                 className="px-3 py-1 rounded bg-red-700 text-white hover:opacity-90"
               >
-                Select
+                View
               </button>
             </li>
           );

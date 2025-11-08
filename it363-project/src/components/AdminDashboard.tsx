@@ -1,7 +1,7 @@
 // src/components/AdminDashboard.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
 import {
   addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query,
@@ -9,6 +9,127 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import Calendar from "@/components/Calendar";
+
+const GEOAPIFY_API_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY || "";
+const GEOAPIFY_MIN_QUERY_LENGTH = 3;
+type MapProvider = "openstreetmap" | "google";
+type MapCoords = { lat: number; lng: number };
+
+const DEFAULT_MAP_PROVIDER: MapProvider = "openstreetmap";
+
+const MAP_PROVIDER_OPTIONS: Array<{ id: MapProvider; label: string }> = [
+  { id: "openstreetmap", label: "OpenStreetMap" },
+  { id: "google", label: "Google Maps" }
+];
+
+function buildGeoapifyMapsLink(lat: number, lon: number) {
+  const clampedLat = Number.isFinite(lat) ? lat.toFixed(6) : "";
+  const clampedLon = Number.isFinite(lon) ? lon.toFixed(6) : "";
+  if (!clampedLat || !clampedLon) return "";
+  return `https://www.openstreetmap.org/?mlat=${clampedLat}&mlon=${clampedLon}#map=16/${clampedLat}/${clampedLon}`;
+}
+
+function buildStaticMapUrl(lat: number, lon: number) {
+  if (!GEOAPIFY_API_KEY) return "";
+  const url = new URL("https://maps.geoapify.com/v1/staticmap");
+  url.searchParams.set("style", "osm-bright-smooth");
+  url.searchParams.set("type", "map");
+  url.searchParams.set("format", "png");
+  url.searchParams.set("scaleFactor", "2");
+  url.searchParams.set("width", "600");
+  url.searchParams.set("height", "360");
+  url.searchParams.set("zoom", "14");
+  url.searchParams.set("center", `lonlat:${lon},${lat}`);
+  url.searchParams.set(
+    "marker",
+    `lonlat:${lon},${lat};type:awesome;icon:map-marker;icontype:awesome;color:%23dd2c00;size:large`
+  );
+  url.searchParams.set("apiKey", GEOAPIFY_API_KEY);
+  return url.toString();
+}
+
+function buildOpenStreetMapEmbedUrl(lat: number, lon: number) {
+  const delta = 0.01;
+  const bbox = `${lon - delta},${lat - delta},${lon + delta},${lat + delta}`;
+  const url = new URL("https://www.openstreetmap.org/export/embed.html");
+  url.searchParams.set("bbox", bbox);
+  url.searchParams.set("layer", "mapnik");
+  url.searchParams.set("marker", `${lat},${lon}`);
+  return url.toString();
+}
+
+function buildMapLinkForProvider(lat: number, lon: number, provider: MapProvider) {
+  const clampedLat = Number.isFinite(lat) ? lat.toFixed(6) : "";
+  const clampedLon = Number.isFinite(lon) ? lon.toFixed(6) : "";
+  if (!clampedLat || !clampedLon) return "";
+  if (provider === "google") {
+    return `https://www.google.com/maps/search/?api=1&query=${clampedLat},${clampedLon}`;
+  }
+  return buildGeoapifyMapsLink(Number(clampedLat), Number(clampedLon));
+}
+
+function detectMapProvider(url: string): MapProvider | null {
+  if (!url) return null;
+  const value = url.toLowerCase();
+  if (value.includes("google.com/maps") || value.includes("goo.gl/maps") || value.includes("maps.app.goo.gl")) {
+    return "google";
+  }
+  if (value.includes("openstreetmap.org") || value.includes("geoapify.com")) {
+    return "openstreetmap";
+  }
+  return null;
+}
+
+function coordsAreEqual(a: MapCoords | null, b: MapCoords | null) {
+  if (!a || !b) return !a && !b;
+  return Math.abs(a.lat - b.lat) < 1e-6 && Math.abs(a.lng - b.lng) < 1e-6;
+}
+
+function extractLatLngFromUrl(url: string) {
+  if (!url) return null;
+  const decoded = decodeURIComponent(url);
+
+  const bareCoordsMatch = decoded.trim().match(/^(-?\d+(?:\.\d+)?)(?:\s*,\s*|\s+)(-?\d+(?:\.\d+)?)$/);
+  if (bareCoordsMatch) {
+    return { lat: parseFloat(bareCoordsMatch[1]), lng: parseFloat(bareCoordsMatch[2]) };
+  }
+
+  const mlatMatch = decoded.match(/[?&#]mlat=(-?\d+(?:\.\d+)?)/i);
+  const mlonMatch = decoded.match(/[?&#]mlon=(-?\d+(?:\.\d+)?)/i);
+  if (mlatMatch && mlonMatch) {
+    return { lat: parseFloat(mlatMatch[1]), lng: parseFloat(mlonMatch[1]) };
+  }
+
+  const lonlatMatch = decoded.match(/lonlat[:=](-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+  if (lonlatMatch) {
+    return { lat: parseFloat(lonlatMatch[2]), lng: parseFloat(lonlatMatch[1]) };
+  }
+
+  const queryMatch = decoded.match(/[?&](?:q|query)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+  if (queryMatch) {
+    return { lat: parseFloat(queryMatch[1]), lng: parseFloat(queryMatch[2]) };
+  }
+
+  const atMatch = decoded.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+  if (atMatch) {
+    return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+  }
+
+  const bangMatch = decoded.match(/!3d(-?\d+(?:\.\d+)?)[^!]*!4d(-?\d+(?:\.\d+)?)/i);
+  if (bangMatch) {
+    return { lat: parseFloat(bangMatch[1]), lng: parseFloat(bangMatch[2]) };
+  }
+
+  return null;
+}
+
+function looksLikeMapInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (/^https?:\/\//i.test(trimmed)) return true;
+  if (/^-?\d+(?:\.\d+)?(?:\s*,\s*|\s+)-?\d+(?:\.\d+)?$/.test(trimmed)) return true;
+  return Boolean(extractLatLngFromUrl(trimmed));
+}
 
 // ---------- Types ----------
 type StationEvent = {
@@ -20,6 +141,8 @@ type StationEvent = {
   endTime: string;
   menuId: string;
   mapsUrl?: string;
+  mapsLabel?: string;
+  mapsProvider?: MapProvider | null;
   createdAt?: any;
 };
 
@@ -51,6 +174,14 @@ type EventTemplate = {
   startTime?: string;
   endTime?: string;
   menuId?: string;
+};
+
+type MapSuggestion = {
+  id: string;
+  label: string;
+  secondary?: string;
+  lat: number;
+  lon: number;
 };
 
 // ==========================================================
@@ -300,7 +431,7 @@ function DaysTab({
 
   // Pull ALL events to build a "preset" list from existing titles (e.g., "Roving Ramble")
   const [presets, setPresets] = useState<
-    { title: string; last: Pick<StationEvent, "location"|"startTime"|"endTime"|"menuId"> }[]
+    { title: string; last: Pick<StationEvent, "location"|"startTime"|"endTime"|"menuId"|"mapsUrl"|"mapsLabel"|"mapsProvider"> }[]
   >([]);
   const [presetTitle, setPresetTitle] = useState<string>("");
   const [useCustom, setUseCustom] = useState<boolean>(false);
@@ -313,12 +444,30 @@ function DaysTab({
   const [endTime, setEndTime] = useState("");
   const [menuId, setMenuId] = useState<string>("");
   const [mapsUrl, setMapsUrl] = useState("");
+  const [mapsSearchText, setMapsSearchText] = useState("");
+  type MapPreviewState = { src?: string; embed?: string; description: string };
+  const [mapsPreview, setMapsPreview] = useState<MapPreviewState | null>(null);
+  const [mapsPreviewMode, setMapsPreviewMode] = useState<"image" | "embed" | "none">("none");
+  const [mapsError, setMapsError] = useState<string | null>(null);
+  const [mapsSuggestions, setMapsSuggestions] = useState<MapSuggestion[]>([]);
+  const [mapsLoading, setMapsLoading] = useState(false);
+  const [mapsLinkIsManual, setMapsLinkIsManual] = useState(false);
+  const [mapsCoords, setMapsCoords] = useState<MapCoords | null>(null);
+  const [mapProvider, setMapProvider] = useState<MapProvider>(DEFAULT_MAP_PROVIDER);
+  const [mapsEmbedInteractive, setMapsEmbedInteractive] = useState(false);
+  const [showSuggestionMenu, setShowSuggestionMenu] = useState(false);
+  const mapsInputRef = useRef<HTMLInputElement | null>(null);
+  const suggestionRequestIdRef = useRef(0);
+  const skipNextSuggestionFetchRef = useRef(false);
+  const suggestionAbortControllerRef = useRef<AbortController | null>(null);
+  const hasGeoapifyKey = Boolean(GEOAPIFY_API_KEY);
+  const trimmedMapsQuery = mapsSearchText.trim();
 
   // Build presets from ALL events (group by title, take most recent by createdAt)
   useEffect(() => {
     const ref = collection(db, "events");
     const unsub = onSnapshot(ref, (snap) => {
-      type Acc = Record<string, { ts: number; location?: string; startTime?: string; endTime?: string; menuId?: string; mapsUrl?: string }>;
+  type Acc = Record<string, { ts: number; location?: string; startTime?: string; endTime?: string; menuId?: string; mapsUrl?: string; mapsLabel?: string; mapsProvider?: MapProvider | null }>;
       const acc: Acc = {};
       for (const d of snap.docs) {
         const data = d.data() as any;
@@ -335,7 +484,9 @@ function DaysTab({
             startTime: data.startTime ?? "",
             endTime: data.endTime ?? "",
             menuId: data.menuId ?? "",
-            mapsUrl: data.mapsUrl ?? ""
+            mapsUrl: data.mapsUrl ?? "",
+            mapsLabel: data.mapsLabel ?? "",
+            mapsProvider: (data.mapsProvider ?? null) as MapProvider | null
           };
         }
       }
@@ -346,7 +497,10 @@ function DaysTab({
             location: v.location ?? "",
             startTime: v.startTime ?? "",
             endTime: v.endTime ?? "",
-            menuId: v.menuId ?? ""
+            menuId: v.menuId ?? "",
+            mapsUrl: v.mapsUrl ?? "",
+            mapsLabel: v.mapsLabel ?? "",
+            mapsProvider: v.mapsProvider ?? null
           }
         }))
         .sort((a, b) => a.title.localeCompare(b.title));
@@ -370,6 +524,204 @@ function DaysTab({
     return () => unsub();
   }, [selectedDate]);
 
+  useEffect(() => {
+    if (!hasGeoapifyKey || mapsLinkIsManual) {
+      suggestionAbortControllerRef.current?.abort();
+      suggestionAbortControllerRef.current = null;
+      setMapsSuggestions([]);
+      setMapsLoading(false);
+      setShowSuggestionMenu(false);
+      return;
+    }
+
+    if (skipNextSuggestionFetchRef.current) {
+      skipNextSuggestionFetchRef.current = false;
+      suggestionAbortControllerRef.current?.abort();
+      suggestionAbortControllerRef.current = null;
+      setMapsLoading(false);
+      setShowSuggestionMenu(false);
+      return;
+    }
+
+    const query = trimmedMapsQuery;
+    if (!query) {
+      suggestionAbortControllerRef.current?.abort();
+      suggestionAbortControllerRef.current = null;
+      setMapsSuggestions([]);
+      setMapsLoading(false);
+      setMapsError(null);
+      setShowSuggestionMenu(false);
+      return;
+    }
+
+    if (query.length < GEOAPIFY_MIN_QUERY_LENGTH) {
+      suggestionAbortControllerRef.current?.abort();
+      suggestionAbortControllerRef.current = null;
+      setMapsSuggestions([]);
+      setMapsLoading(false);
+      setMapsError(null);
+      setShowSuggestionMenu(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    suggestionAbortControllerRef.current?.abort();
+    suggestionAbortControllerRef.current = controller;
+    const requestId = ++suggestionRequestIdRef.current;
+    setMapsLoading(true);
+    setMapsSuggestions([]);
+    setShowSuggestionMenu(true);
+
+    const fetchSuggestions = async () => {
+      try {
+        const response = await fetch(
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&limit=5&apiKey=${GEOAPIFY_API_KEY}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          throw new Error(`Geoapify autocomplete failed: ${response.status}`);
+        }
+        const data = await response.json();
+        if (controller.signal.aborted || suggestionRequestIdRef.current !== requestId) return;
+
+        const features = Array.isArray(data?.features) ? data.features : [];
+        const suggestions: MapSuggestion[] = features
+          .map((feature: any) => {
+            const props = feature?.properties ?? {};
+            const geometry = feature?.geometry;
+            const lon = typeof props.lon === "number" ? props.lon : geometry?.coordinates?.[0];
+            const lat = typeof props.lat === "number" ? props.lat : geometry?.coordinates?.[1];
+            if (typeof lat !== "number" || typeof lon !== "number") return null;
+
+            const primary = props.address_line1 || props.name || props.street || props.formatted || "";
+            const secondaryParts = [
+              props.address_line2,
+              props.city,
+              props.state_code || props.state,
+              props.country
+            ].filter(Boolean);
+            const secondary = secondaryParts.join(", ") || undefined;
+            const id = props.place_id || props.datasource?.raw?.osm_id || `${lat},${lon}`;
+            if (!primary || !id) return null;
+
+            return {
+              id: String(id),
+              label: primary,
+              secondary,
+              lat,
+              lon,
+            } as MapSuggestion;
+          })
+          .filter(Boolean) as MapSuggestion[];
+
+        setMapsSuggestions(suggestions);
+        setMapsError(null);
+      } catch (err) {
+        if (controller.signal.aborted || suggestionRequestIdRef.current !== requestId) {
+          return;
+        }
+        console.warn("[Geoapify]", err);
+        setMapsSuggestions([]);
+        setMapsError("Unable to fetch location suggestions right now.");
+        setShowSuggestionMenu(false);
+      } finally {
+        if (suggestionRequestIdRef.current === requestId) {
+          setMapsLoading(false);
+        }
+        if (suggestionAbortControllerRef.current === controller) {
+          suggestionAbortControllerRef.current = null;
+        }
+      }
+    };
+
+    fetchSuggestions();
+
+    return () => {
+      controller.abort();
+      if (suggestionAbortControllerRef.current === controller) {
+        suggestionAbortControllerRef.current = null;
+      }
+    };
+  }, [trimmedMapsQuery, hasGeoapifyKey, mapsLinkIsManual]);
+
+  useEffect(() => {
+    if (mapsLinkIsManual) return;
+    if (!mapsCoords) return;
+    const nextLink = buildMapLinkForProvider(mapsCoords.lat, mapsCoords.lng, mapProvider);
+    if (!nextLink) return;
+    setMapsUrl((prev) => (prev === nextLink ? prev : nextLink));
+  }, [mapProvider, mapsCoords, mapsLinkIsManual]);
+
+  useEffect(() => {
+    if (!mapsCoords) {
+      setMapsPreview(null);
+      setMapsPreviewMode("none");
+      setMapsEmbedInteractive(false);
+      return;
+    }
+    const staticUrl = buildStaticMapUrl(mapsCoords.lat, mapsCoords.lng);
+    const embedUrl = buildOpenStreetMapEmbedUrl(mapsCoords.lat, mapsCoords.lng);
+    const description = mapsSearchText || location || "Selected location";
+
+    if (staticUrl) {
+      setMapsPreview((prev) => {
+        if (prev?.src === staticUrl && prev?.embed === embedUrl && prev?.description === description) {
+          return prev;
+        }
+        return {
+          src: staticUrl,
+          embed: embedUrl,
+          description,
+        };
+      });
+      setMapsPreviewMode("image");
+      setMapsEmbedInteractive(false);
+      return;
+    }
+
+    if (embedUrl) {
+      setMapsPreview((prev) => {
+        if (prev?.embed === embedUrl && prev?.description === description && !prev?.src) {
+          return prev;
+        }
+        return {
+          embed: embedUrl,
+          description,
+        };
+      });
+      setMapsPreviewMode("embed");
+      setMapsEmbedInteractive(false);
+      return;
+    }
+
+    setMapsPreview(null);
+    setMapsPreviewMode("none");
+    setMapsEmbedInteractive(false);
+  }, [mapsCoords, location, mapsSearchText]);
+
+  function handleSelectSuggestion(suggestion: MapSuggestion) {
+    skipNextSuggestionFetchRef.current = true;
+    suggestionAbortControllerRef.current?.abort();
+    suggestionAbortControllerRef.current = null;
+    setMapsError(null);
+    setMapsSuggestions([]);
+    setMapsLoading(false);
+    setShowSuggestionMenu(false);
+    setMapsLinkIsManual(false);
+
+    const displayLabel = suggestion.secondary
+      ? `${suggestion.label}, ${suggestion.secondary}`
+      : suggestion.label;
+    setMapsSearchText(displayLabel);
+    const coords: MapCoords = { lat: suggestion.lat, lng: suggestion.lon };
+    setMapsCoords(coords);
+    const providerLink = buildMapLinkForProvider(coords.lat, coords.lng, mapProvider);
+    setMapsUrl(providerLink || `${coords.lat},${coords.lng}`);
+    if (!location.trim()) {
+      setLocation(displayLabel);
+    }
+  }
+
   function resetForm() {
     setEvId(null);
     setTitle("");
@@ -378,6 +730,20 @@ function DaysTab({
     setEndTime("");
     setMenuId("");
     setMapsUrl("");
+    setMapsSearchText("");
+    setMapsPreview(null);
+    setMapsPreviewMode("none");
+    setMapsEmbedInteractive(false);
+    setMapsError(null);
+    setMapsSuggestions([]);
+    setMapsLoading(false);
+    setMapsCoords(null);
+    setMapsLinkIsManual(false);
+    setMapProvider(DEFAULT_MAP_PROVIDER);
+    setShowSuggestionMenu(false);
+    suggestionAbortControllerRef.current?.abort();
+    suggestionAbortControllerRef.current = null;
+    skipNextSuggestionFetchRef.current = false;
     setPresetTitle("");
     setUseCustom(false);
   }
@@ -393,6 +759,28 @@ function DaysTab({
     setStartTime(p.last.startTime ?? "");
     setEndTime(p.last.endTime ?? "");
     setMenuId(p.last.menuId ?? "");
+    skipNextSuggestionFetchRef.current = true;
+    setMapsSuggestions([]);
+    setMapsLoading(false);
+    suggestionAbortControllerRef.current?.abort();
+    suggestionAbortControllerRef.current = null;
+    setMapsError(null);
+
+    const presetMaps = p.last.mapsUrl ?? "";
+    const presetLabel = p.last.mapsLabel ?? "";
+    const presetProvider = (p.last.mapsProvider as MapProvider | null) ?? detectMapProvider(presetMaps);
+    const coords = presetMaps ? extractLatLngFromUrl(presetMaps) : null;
+    const hasAutoProvider = Boolean(coords && presetProvider);
+
+    setMapsCoords(coords ?? null);
+    setMapProvider(presetProvider ?? DEFAULT_MAP_PROVIDER);
+    setMapsLinkIsManual(!hasAutoProvider);
+    const appliedUrl = hasAutoProvider && coords && presetProvider
+      ? buildMapLinkForProvider(coords.lat, coords.lng, presetProvider)
+      : presetMaps;
+    setMapsUrl(appliedUrl);
+    setMapsSearchText(presetLabel || presetMaps || p.last.location || "");
+    setShowSuggestionMenu(false);
   }, [presetTitle, presets]);
 
   async function createEvent() {
@@ -409,6 +797,8 @@ function DaysTab({
       endTime: endTime.trim(),
       menuId: menuId || "",
       mapsUrl: mapsUrl.trim(),
+      mapsLabel: mapsUrl.trim() ? mapsSearchText.trim() : "",
+      mapsProvider: !mapsLinkIsManual && mapsCoords ? mapProvider : null,
       createdAt: serverTimestamp(),
     });
     resetForm();
@@ -427,6 +817,29 @@ function DaysTab({
     setStartTime(d.startTime ?? "");
     setEndTime(d.endTime ?? "");
     setMenuId(d.menuId ?? "");
+    skipNextSuggestionFetchRef.current = true;
+    setMapsSuggestions([]);
+    setMapsLoading(false);
+    suggestionAbortControllerRef.current?.abort();
+    suggestionAbortControllerRef.current = null;
+    setMapsError(null);
+
+    const existingMapsUrl = d.mapsUrl ?? "";
+    const existingMapsLabel = d.mapsLabel ?? "";
+    const storedProvider = (d.mapsProvider ?? null) as MapProvider | null;
+    const derivedProvider = detectMapProvider(existingMapsUrl);
+    const coords = existingMapsUrl ? extractLatLngFromUrl(existingMapsUrl) : null;
+    const provider = storedProvider || derivedProvider || DEFAULT_MAP_PROVIDER;
+    const isManual = !coords || !storedProvider;
+    setMapsCoords(coords ?? null);
+    setMapProvider(provider);
+    setMapsLinkIsManual(isManual);
+    const effectiveUrl = !isManual && coords
+      ? buildMapLinkForProvider(coords.lat, coords.lng, provider)
+      : existingMapsUrl;
+    setMapsUrl(effectiveUrl);
+    setMapsSearchText(existingMapsLabel || existingMapsUrl || d.location || "");
+    setShowSuggestionMenu(false);
   }
 
   async function saveEdit() {
@@ -436,7 +849,10 @@ function DaysTab({
       location: location.trim(),
       startTime: startTime.trim(),
       endTime: endTime.trim(),
-      menuId: menuId || ""
+      menuId: menuId || "",
+      mapsUrl: mapsUrl.trim(),
+      mapsLabel: mapsUrl.trim() ? mapsSearchText.trim() : "",
+      mapsProvider: !mapsLinkIsManual && mapsCoords ? mapProvider : null
     });
     resetForm();
   }
@@ -492,6 +908,21 @@ function DaysTab({
                   setStartTime("");
                   setEndTime("");
                   setMenuId("");
+                  setMapsUrl("");
+                  setMapsSearchText("");
+                  setMapsPreview(null);
+                  setMapsPreviewMode("none");
+                  setMapsEmbedInteractive(false);
+                  setMapsError(null);
+                  setMapsSuggestions([]);
+                  setMapsLoading(false);
+                  setMapsCoords(null);
+                  setMapsLinkIsManual(false);
+                  setMapProvider(DEFAULT_MAP_PROVIDER);
+                  setShowSuggestionMenu(false);
+                  suggestionAbortControllerRef.current?.abort();
+                  suggestionAbortControllerRef.current = null;
+                  skipNextSuggestionFetchRef.current = false;
                 }
               }}
               disabled={!selectedDate}
@@ -562,15 +993,200 @@ function DaysTab({
                 ))}
               </select>
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-black/70">Google Maps Link</label>
-              <input
-                className="rounded px-3 py-2 border border-black/20"
-                value={mapsUrl}
-                onChange={e => setMapsUrl(e.target.value)}
-                placeholder="e.g., https://goo.gl/maps/..."
-                disabled={!selectedDate}
-              />
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <label className="text-sm text-black/70">Map Location Search</label>
+              <div className="relative">
+                <input
+                  ref={mapsInputRef}
+                  className="w-full rounded px-3 py-2 border border-black/20"
+                  value={mapsSearchText}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setMapsSearchText(val);
+                    const trimmed = val.trim();
+                    if (!trimmed) {
+                      setMapsUrl("");
+                      setMapsCoords(null);
+                      setMapsLinkIsManual(false);
+                      setShowSuggestionMenu(false);
+                      setMapProvider(DEFAULT_MAP_PROVIDER);
+                      return;
+                    }
+                    if (looksLikeMapInput(trimmed)) {
+                      suggestionAbortControllerRef.current?.abort();
+                      suggestionAbortControllerRef.current = null;
+                      setMapsSuggestions([]);
+                      setMapsLoading(false);
+                      setMapsUrl(trimmed);
+                      setMapsLinkIsManual(true);
+                      setShowSuggestionMenu(false);
+                      const coords = extractLatLngFromUrl(trimmed);
+                      setMapsCoords(coords ?? null);
+                    } else {
+                      setMapsUrl("");
+                      setMapsCoords(null);
+                      setMapsLinkIsManual(false);
+                      setShowSuggestionMenu(hasGeoapifyKey && trimmed.length >= GEOAPIFY_MIN_QUERY_LENGTH);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (!mapsLinkIsManual && hasGeoapifyKey && trimmedMapsQuery.length >= GEOAPIFY_MIN_QUERY_LENGTH) {
+                      setShowSuggestionMenu(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    window.setTimeout(() => setShowSuggestionMenu(false), 120);
+                  }}
+                  placeholder="Search for an address or paste a map link"
+                  disabled={!selectedDate}
+                  autoComplete="off"
+                />
+                {hasGeoapifyKey && showSuggestionMenu && (
+                  <div className="absolute left-0 right-0 top-full z-20 mt-1">
+                    {mapsLoading ? (
+                      <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-xs text-black/60">
+                        Searching...
+                      </div>
+                    ) : mapsSuggestions.length > 0 ? (
+                      <ul className="max-h-60 overflow-auto rounded-lg border border-black/10 bg-white shadow-lg">
+                        {mapsSuggestions.map((suggestion) => (
+                          <li key={suggestion.id}>
+                            <button
+                              type="button"
+                              className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-black/5"
+                              onMouseDown={(evt) => {
+                                evt.preventDefault();
+                                handleSelectSuggestion(suggestion);
+                              }}
+                            >
+                              <span className="text-sm font-medium text-black">{suggestion.label}</span>
+                              {suggestion.secondary && (
+                                <span className="text-xs text-black/60">{suggestion.secondary}</span>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-xs text-black/60">
+                        No matches found for "{trimmedMapsQuery}".
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {mapsCoords && !mapsLinkIsManual && (
+                <div className="flex flex-col gap-1 text-xs text-black/70">
+                  <label className="font-medium">Open map with</label>
+                  <select
+                    className="rounded px-3 py-2 border border-black/20 text-sm text-black"
+                    value={mapProvider}
+                    onChange={(event) => {
+                      const nextProvider = event.target.value as MapProvider;
+                      setMapProvider(nextProvider);
+                    }}
+                  >
+                    {MAP_PROVIDER_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {mapsLinkIsManual && mapsUrl && (
+                <p className="text-xs text-black/60">
+                  Using a custom map link. Select a suggestion above to switch back to provider-generated links.
+                </p>
+              )}
+              {mapsError && (
+                <p className="text-xs text-red-600">{mapsError}</p>
+              )}
+              {!hasGeoapifyKey && !mapsError && (
+                <p className="text-xs text-black/60">
+                  Add <code>NEXT_PUBLIC_GEOAPIFY_API_KEY</code> to enable autocomplete and map previews.
+                </p>
+              )}
+              {mapsPreviewMode === "image" && mapsPreview?.src && mapsUrl && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block"
+                >
+                  <img
+                    src={mapsPreview.src}
+                    alt={`Map preview for ${mapsPreview.description}`}
+                    className="h-48 w-full rounded-lg border border-black/10 object-cover"
+                    loading="lazy"
+                    onError={() => {
+                      if (mapsPreview?.embed) {
+                        setMapsPreviewMode("embed");
+                        setMapsEmbedInteractive(false);
+                      } else {
+                        setMapsPreviewMode("none");
+                      }
+                    }}
+                  />
+                  <span className="mt-1 block text-xs text-black/60">
+                    Preview - open map in a new tab
+                  </span>
+                </a>
+              )}
+              {mapsPreviewMode === "embed" && mapsPreview?.embed && (
+                <div className="mt-2 space-y-2">
+                  <div
+                    className="relative overflow-hidden rounded-lg border border-black/10"
+                    onMouseLeave={() => setMapsEmbedInteractive(false)}
+                  >
+                    {!mapsEmbedInteractive && (
+                      <button
+                        type="button"
+                        onClick={() => setMapsEmbedInteractive(true)}
+                        className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-center text-xs font-medium uppercase tracking-wide text-white hover:bg-black/35"
+                      >
+                        Click to interact with the map
+                      </button>
+                    )}
+                    <iframe
+                      src={mapsPreview.embed}
+                      title="OpenStreetMap preview"
+                      width="100%"
+                      height="240"
+                      loading="lazy"
+                      className="block"
+                      referrerPolicy="no-referrer"
+                      style={{ pointerEvents: mapsEmbedInteractive ? "auto" : "none" }}
+                    />
+                  </div>
+                  {mapsUrl && (
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-xs font-medium text-red-600 hover:underline"
+                    >
+                      Open full map ↗
+                    </a>
+                  )}
+                </div>
+              )}
+              {mapsPreviewMode === "none" && mapsUrl && (
+                <div className="mt-2 rounded-lg border border-dashed border-black/15 bg-black/[0.02] p-3 text-xs text-black/70">
+                  <p className="font-medium text-black">Map preview unavailable</p>
+                  <p className="mt-1">
+                    We could not generate an embedded preview. You can still open the map in a new tab.
+                  </p>
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-2 rounded-full border border-black/20 px-3 py-1 text-xs font-medium text-black transition hover:bg-black/10"
+                  >
+                    Open map ↗
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         )}
