@@ -22,6 +22,7 @@ export type StationEvent = {
   startTime: string;
   endTime: string;
   menuId: string;
+  mapsUrl?: string;   // Google Maps link
   isPublished: boolean;
 };
 

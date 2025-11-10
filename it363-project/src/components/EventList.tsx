@@ -3,7 +3,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 
-type StationEvent = {
+export type StationEvent = {
   id: string;
   dateStr: string;
   title: string;
@@ -11,6 +11,9 @@ type StationEvent = {
   startTime: string;
   endTime: string;
   menuId: string;
+  mapsUrl?: string;
+  mapsLabel?: string;
+  mapsProvider?: string | null;
 };
 
 export default function EventList({
@@ -20,7 +23,7 @@ export default function EventList({
 }: {
   date: string | null;
   selectedEventId: string | null;
-  onSelectEvent: (id: string, menuId: string) => void;
+  onSelectEvent: (event: StationEvent) => void;
 }) {
   const [events, setEvents] = useState<StationEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,10 +46,10 @@ export default function EventList({
   if (!date) return null;
 
   return (
-    <div className="w-full max-w-3xl mt-6 text-white">
-      <h2 className="text-xl font-semibold mb-2">Events on {date}</h2>
-      {loading && <div className="text-gray-400">Loading events…</div>}
-      {!loading && events.length === 0 && <div className="text-gray-400">No events for this date.</div>}
+    <div className="w-full max-w-3xl mt-6 text-neutral-900">
+      <h2 className="text-xl font-semibold mb-2">Events this day:</h2>
+      {loading && <div className="text-neutral-500">Loading events…</div>}
+      {!loading && events.length === 0 && <div className="text-neutral-500">We have no events this day!</div>}
       <ul className="space-y-2">
         {events.map((ev) => {
           const active = ev.id === selectedEventId;
@@ -54,20 +57,20 @@ export default function EventList({
             <li
               key={ev.id}
               className={`rounded border p-3 flex items-center justify-between ${
-                active ? "border-red-400 bg-red-50/10" : "border-white/20 bg-white/5"
+                active ? "border-red-500 bg-red-50" : "border-neutral-200 bg-neutral-50"
               }`}
             >
               <div>
                 <div className="font-medium">{ev.title}</div>
-                <div className="text-sm text-gray-300">
+                <div className="text-sm text-neutral-600">
                   📍 {ev.location} • {ev.startTime} – {ev.endTime}
                 </div>
               </div>
               <button
-                onClick={() => onSelectEvent(ev.id, ev.menuId)}
-                className="px-3 py-1 rounded bg-red-700 text-white hover:opacity-90"
+                onClick={() => onSelectEvent(ev)}
+                className="px-3 py-1 rounded bg-red-600 text-white hover:opacity-90"
               >
-                Select
+                View
               </button>
             </li>
           );
