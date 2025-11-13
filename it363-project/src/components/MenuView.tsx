@@ -66,13 +66,18 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
     return menu.sections.find(s => s.id === selectedSectionId) || null;
   }, [menu, selectedSectionId]);
 
-  if (!menuId) return null;
-  if (loading) return <div className="mt-6 text-gray-400">Loading menu…</div>;
-  if (!menu) return <div className="mt-6 text-gray-400">No menu found.</div>;
+  if (!menuId) return <div className="mt-6 text-center text-gray-600">Please select an event from the dropdown above.</div>;
+  if (loading) return <div className="mt-6 text-center text-gray-500">Loading menu…</div>;
+  if (!menu) return (
+    <div className="mt-6 p-8 bg-white rounded-lg shadow-sm border text-center">
+      <h3 className="text-lg font-semibold text-gray-700 mb-2">Menu Coming Soon!</h3>
+      <p className="text-gray-600">We're working on adding this menu. Please check back later or try another menu option.</p>
+    </div>
+  );
 
   return (
     <div className="w-full max-w-3xl mt-8 text-neutral-900">
-      {menu?.name && <h3 className="text-2xl font-bold mb-4">{menu.name}</h3>}
+      {menu?.name && <h3 className="text-2xl font-bold mb-4"></h3>}
 
       {/* Section selector */}
       {menu?.sections?.length ? (

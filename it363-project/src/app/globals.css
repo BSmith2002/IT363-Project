@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --header-height: 64px;
+  --header-height: 80px;
 }
 
 @theme inline {
@@ -31,17 +31,18 @@ body {
 /* By default the content-wrapper reserves space for the header so the header
    won't visually cover content on first paint (before client JS runs). */
 .content-wrapper {
-  padding-top: var(--header-height);
-  transition: padding-top 200ms ease;
+  margin-top: var(--header-height);
+  transition: margin-top 200ms ease;
 }
 
-/* When the header is hidden we remove the extra padding so content moves up. */
+/* When the header is hidden we add a small padding to maintain some space. */
 html.header-hidden body .content-wrapper {
-  padding-top: 0;
-  transition: padding-top 200ms ease;
+  margin-top: 0;
+  transition: margin-top 200ms ease;
 }
 
-/* Ensure the header transitions smoothly when hiding/showing */
+/* Ensure the header transitions smoothly when hiding/showing and stays on top */
 header {
   will-change: transform;
+  z-index: 9999 !important;
 }

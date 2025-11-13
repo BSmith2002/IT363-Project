@@ -82,7 +82,8 @@ export default function BookPage() {
 
   return (
     <main className="min-h-screen w-full bg-white text-neutral-900">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <div className="content-wrapper">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-10">
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900">Book with us!</h1>
         <p className="mt-2 text-neutral-600">Tell us a bit about your event and the date you're looking at. We'll follow up with you to confirm everything!</p>
 
@@ -235,6 +236,7 @@ export default function BookPage() {
             }}
           />
         )}
+        </div>
       </div>
     </main>
   );

@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 export default function Header() {
-  const [visible, setVisible] = useState(true);
-  const visibleRef = useRef<boolean>(visible);
   const pathname = usePathname();
 
   // If we're on an admin route or auth helper pages (forgot password), don't render the header.
@@ -29,51 +27,15 @@ export default function Header() {
       }
       return;
     }
-    // set initial class so content gets correct padding
+    // set initial class so content gets correct padding - always visible now
     if (typeof document !== "undefined") {
       document.documentElement.classList.add("header-visible");
       document.documentElement.classList.remove("header-hidden");
     }
-    const lastYRef = { current: typeof window !== "undefined" ? window.scrollY : 0 };
-    const tickingRef = { current: false };
-
-    function onScroll() {
-      if (tickingRef.current) return;
-      tickingRef.current = true;
-      window.requestAnimationFrame(() => {
-        const y = window.scrollY;
-        const lastY = lastYRef.current;
-        // Immediate hide on any downward movement, immediate show on any upward movement.
-        const delta = y - lastY;
-
-        if (delta > 0 && visibleRef.current) {
-          // scrolled down -> hide immediately
-          visibleRef.current = false;
-          setVisible(false);
-          document.documentElement.classList.remove("header-visible");
-          document.documentElement.classList.add("header-hidden");
-        } else if (delta < 0 && !visibleRef.current) {
-          // scrolled up -> show immediately
-          visibleRef.current = true;
-          setVisible(true);
-          document.documentElement.classList.add("header-visible");
-          document.documentElement.classList.remove("header-hidden");
-        }
-
-        // update lastY for next frame
-        lastYRef.current = y;
-        tickingRef.current = false;
-      });
-    }
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // header classes: when visible -> fixed and red; when hidden -> translate up
-  const headerClass = visible
-    ? "fixed top-0 left-0 right-0 bg-red-800 text-white shadow transition-transform duration-200"
-    : "fixed top-0 left-0 right-0 -translate-y-full bg-red-800 text-white transition-transform duration-200";
+  // header classes: always visible and fixed at top with highest z-index
+  const headerClass = "fixed top-0 left-0 right-0 bg-red-800 text-white shadow z-50";
 
   if (isAdminRoute) return null;
 
@@ -109,6 +71,11 @@ export default function Header() {
                 </Link>
               </li>
               <li>
+                <Link href="/menupage" className="text-lg hover:underline">
+                  Menu
+                </Link>
+              </li>
+              <li>
                 <Link
                   href="/book"
                   className="text-sm font-semibold rounded-full bg-white text-red-800 px-4 py-2 shadow hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
@@ -116,6 +83,7 @@ export default function Header() {
                   Book with us!
                 </Link>
               </li>
+
             </ul>
           </nav>
         </div>
