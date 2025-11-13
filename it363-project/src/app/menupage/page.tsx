@@ -35,7 +35,7 @@ export default function MenuPage() {
         
         // Auto-select the first menu if available
         if (menus.length > 0) {
-          setSelectedMenuId(menus[0].id);
+          setSelectedMenuId(menus[1].id);
         }
       } catch (error) {
         console.error("Error fetching menus:", error);
@@ -63,15 +63,12 @@ export default function MenuPage() {
           <div className="w-full max-w-6xl mx-auto">
             {/* Page Title */}
             <h1 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-gray-800">
-              Our Menu
+              Select your menu:
             </h1>
 
             {/* Menu Selection Dropdown */}
             <div className="mb-12 flex justify-center">
               <div className="relative w-full max-w-md">
-                <label htmlFor="menu-select" className="block text-lg font-bold text-black mb-4 text-center">
-                  Select Menu:
-                </label>
                 {loading ? (
                   <div className="block w-full px-6 py-4 bg-white border-2 border-red-600 rounded-lg text-center text-gray-600 font-medium shadow-md">
                     Loading menus...
