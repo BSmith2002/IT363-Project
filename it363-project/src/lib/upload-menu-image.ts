@@ -1,7 +1,5 @@
 "use client";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage, db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
 
 export async function uploadMenuItemPhoto(
   menuId: string,
@@ -9,32 +7,62 @@ export async function uploadMenuItemPhoto(
   itemId: string,
   file: File
 ) {
-  const ext = file.name.split(".").pop() || "jpg";
-  const objectPath = `menu-images/${menuId}/${itemId}-${Date.now()}.${ext}`;
+  // Get the current user's ID token for authentication
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("User must be authenticated to upload images");
+  }
 
-  // 1) Upload
-  const storageRef = ref(storage, objectPath);
-  await uploadBytes(storageRef, file, { contentType: file.type });
+  const idToken = await user.getIdToken();
 
-  // 2) Get a public download URL
-  const url = await getDownloadURL(storageRef);
+  // Create form data
+  const formData = new FormData();
+  formData.append("menuId", menuId);
+  formData.append("sectionId", sectionId);
+  formData.append("itemId", itemId);
+  formData.append("file", file);
 
-  // 3) Write the URL (and path) back to Firestore
-  const menuRef = doc(db, "menus", menuId);
-  const snap = await getDoc(menuRef);
-  if (!snap.exists()) throw new Error("Menu not found");
+  // Call the server-side API route
+  const response = await fetch("/api/admin/upload-menu-image", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: formData,
+  });
 
-  const data = snap.data() as any;
-  const sections = data.sections ?? [];
-  const sIdx = sections.findIndex((s: any) => s.id === sectionId);
-  if (sIdx === -1) throw new Error("Section not found");
-  const iIdx = sections[sIdx].items?.findIndex((it: any) => it.id === itemId);
-  if (iIdx === -1) throw new Error("Item not found");
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+  }
 
-  sections[sIdx].items[iIdx].photoUrl = url;       // used by the UI
-  sections[sIdx].items[iIdx].photoPath = objectPath; // optional: store path too
+  const result = await response.json();
+  return { url: result.url, objectPath: result.objectPath };
+}
 
-  await updateDoc(menuRef, { sections });
+export async function deleteMenuItemPhoto(
+  menuId: string,
+  sectionId: string,
+  itemId: string,
+) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("User must be authenticated to delete images");
+  const idToken = await user.getIdToken();
 
-  return { url, objectPath };
+  const res = await fetch("/api/admin/delete-menu-image", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ menuId, sectionId, itemId })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Delete failed with status ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.item as any;
 }

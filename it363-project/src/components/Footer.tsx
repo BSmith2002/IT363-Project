@@ -23,7 +23,7 @@ export default function Footer() {
   if (hideOnRoute) return null;
 
   return (
-    <footer className="mt-2 border-t border-neutral-200 bg-neutral-100 text-neutral-600">
+    <footer className="border-t border-neutral-200 bg-neutral-100 text-neutral-600">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between">
         <div className="flex flex-col items-center gap-1 text-sm sm:items-start">
           <span className="text-neutral-800 font-semibold">The Station Foodtruck</span>
