@@ -42,6 +42,7 @@ html.header-hidden body .content-wrapper {
 }
 
 /* Ensure the header transitions smoothly when hiding/showing and stays on top */
+/* Keep the site header above content without forcing extreme stacking. */
 header {
   will-change: transform;
   z-index: 9999 !important;
