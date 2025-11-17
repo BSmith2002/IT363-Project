@@ -8,10 +8,11 @@ import EventMap from "@/components/EventMap";
 import MenuView from "@/components/MenuView";
 
 export default function ClientHome() {
-  const todayISO = useMemo(() => {
+  const getTodayISO = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
+  };
+  const [todayISO, setTodayISO] = useState<string>(getTodayISO());
 
   const [selectedDate, setSelectedDate] = useState<string | null>(todayISO);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -49,22 +50,23 @@ export default function ClientHome() {
     loadMonth();
   }, [currentMonth]);
 
-  // Auto-select an event currently in progress when viewing today's date.
+  // Auto-select and keep in sync with the current time.
   useEffect(() => {
-    async function selectOngoing() {
-      if (!selectedDate || selectedDate !== todayISO) return;
-      // Fetch all events for today
-      const q = query(collection(db, "events"), where("dateStr", "==", selectedDate));
+    let stop = false;
+
+    async function selectBestForToday(forceDate?: string) {
+      const nowISO = forceDate ?? getTodayISO();
+      // Keep today state current (handles midnight rollover)
+      if (nowISO !== todayISO) setTodayISO(nowISO);
+
+      if (!selectedDate || selectedDate !== nowISO) return;
+      const q = query(collection(db, "events"), where("dateStr", "==", nowISO));
       const snap = await getDocs(q);
       const events: StationEvent[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
-      if (!events.length) return;
+      if (!events.length || stop) return;
 
-      // Current time in minutes for comparison
-      const now = new Date();
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-      // Helper: parse times like "10:00 AM" or "2:30 PM"
-      function parseTime(t: string): number | null {
+      // parse times like "10:00 AM" or "2:30 PM"
+      const parseTime = (t: string): number | null => {
         if (!t) return null;
         const match = t.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
         if (!match) return null;
@@ -74,24 +76,49 @@ export default function ClientHome() {
         if (ampm === "PM" && hour !== 12) hour += 12;
         if (ampm === "AM" && hour === 12) hour = 0;
         return hour * 60 + min;
-      }
+      };
 
-      // Find first event whose time window includes now
-      const ongoing = events.find(ev => {
-        const start = parseTime(ev.startTime);
-        const end = parseTime(ev.endTime);
-        if (start == null || end == null) return false;
-        return nowMinutes >= start && nowMinutes <= end;
-      });
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-      if (ongoing) {
-        setSelectedEventId(ongoing.id);
-        setSelectedEvent(ongoing);
-        setSelectedMenuId(ongoing.menuId || null);
-      }
+      // Prefer ongoing; else next upcoming; else first
+      const withWindows = events.map(ev => ({
+        ev,
+        start: parseTime(ev.startTime),
+        end: parseTime(ev.endTime)
+      }));
+      const ongoing = withWindows.find(w => w.start != null && w.end != null && nowMinutes >= (w.start as number) && nowMinutes <= (w.end as number))?.ev;
+      const upcoming = withWindows
+        .filter(w => w.start != null && nowMinutes < (w.start as number))
+        .sort((a, b) => (a.start as number) - (b.start as number))[0]?.ev;
+      const pick = ongoing ?? upcoming ?? events[0];
+
+      setSelectedEventId(pick.id);
+      setSelectedEvent(pick);
+      setSelectedMenuId(pick.menuId || null);
     }
-    selectOngoing();
-  }, [selectedDate, todayISO]);
+
+    // Run immediately on mount/update
+    selectBestForToday();
+
+    // Tick every minute to keep selection aligned with current time
+    const id = window.setInterval(() => {
+      const nowISO = getTodayISO();
+      // If the day rolled over, move the calendar to today
+      if (selectedDate !== nowISO) {
+        setSelectedDate(nowISO);
+        setSelectedEventId(null);
+        setSelectedEvent(null);
+        setSelectedMenuId(null);
+      }
+      selectBestForToday(nowISO);
+    }, 60_000);
+
+    return () => {
+      stop = true;
+      window.clearInterval(id);
+    };
+  }, [selectedDate]);
 
   return (
     <>

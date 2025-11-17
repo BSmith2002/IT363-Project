@@ -10,6 +10,7 @@ type MenuItem = {
   desc?: string;
   price?: string;
   photoUrl?: string; // optional; if absent we'll derive /menu/<id>.jpg
+  photoUpdatedAt?: number; // used to bust cache when image is replaced
 };
 
 type MenuSection = {
@@ -108,7 +109,13 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
           </div>
           <ul className="divide-y divide-neutral-200 rounded-b-xl border border-t-0 border-neutral-200 bg-white">
             {(selectedSection.items ?? []).map(it => {
-              const initialSrc = it.photoUrl || `/${it.id}.jpg`;
+              // Check if this is the steak philly item (by name or ID)
+              const isSteakPhilly = it.name.toLowerCase().includes('steak philly') || it.id === 'phillytemp';
+              const imageSrc = it.photoUrl
+                ? (it.photoUpdatedAt ? `${it.photoUrl}${it.photoUrl.includes('?') ? '&' : '?'}v=${it.photoUpdatedAt}` : it.photoUrl)
+                : (isSteakPhilly ? '/phillytemp.jpg' : `/${it.id}.jpg`);
+              const hasImage = !!it.photoUrl || isSteakPhilly;
+              
               return (
                 <li key={it.id} className="flex items-start justify-between gap-3 p-3">
                   <div className="flex-1 pr-3">
@@ -116,18 +123,15 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
                     {it.desc && <div className="text-sm text-neutral-600">{it.desc}</div>}
                     {it.price && <div className="text-sm mt-1 font-medium text-neutral-700">${it.price}</div>}
                   </div>
-                  <div className="shrink-0">
-                    <img
-                      src={initialSrc}
-                      alt={it.name}
-                      className="h-16 w-16 rounded-lg object-cover ring-1 ring-neutral-200"
-                      onError={(e) => {
-                        const img = e.currentTarget as HTMLImageElement;
-                        img.onerror = null;
-                        img.src = "/phillytemp.jpg";
-                      }}
-                    />
-                  </div>
+                  {hasImage && (
+                    <div className="shrink-0">
+                      <img
+                        src={imageSrc}
+                        alt={it.name}
+                        className="h-16 w-16 rounded-lg object-cover ring-1 ring-neutral-200"
+                      />
+                    </div>
+                  )}
                 </li>
               );
             })}

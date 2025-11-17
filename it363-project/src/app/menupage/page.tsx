@@ -33,9 +33,12 @@ export default function MenuPage() {
         
         setAvailableMenus(menus);
         
-        // Auto-select the first menu if available
+        // Auto-select a sensible default:
+        // 1) A menu named "Default Menu" (case-insensitive)
+        // 2) Otherwise the first menu returned
         if (menus.length > 0) {
-          setSelectedMenuId(menus[1].id);
+          const preferred = menus.find(m => (m.name || "").trim().toLowerCase() === "default menu");
+          setSelectedMenuId((preferred ?? menus[0]).id);
         }
       } catch (error) {
         console.error("Error fetching menus:", error);

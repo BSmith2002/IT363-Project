@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import Calendar from "@/components/Calendar";
+import { uploadMenuItemPhoto, deleteMenuItemPhoto } from "@/lib/upload-menu-image";
 
 const GEOAPIFY_API_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY || "";
 const GEOAPIFY_MIN_QUERY_LENGTH = 3;
@@ -152,6 +153,8 @@ type MenuItem = {
   desc?: string;
   price?: string;
   photoUrl?: string;
+  photoPath?: string;
+  photoUpdatedAt?: number;
 };
 
 type MenuSection = {
@@ -192,6 +195,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isGcpAdmin, setIsGcpAdmin] = useState<boolean>(false);
   const [checkingGcpAccess, setCheckingGcpAccess] = useState<boolean>(true);
+  const [toast, setToast] = useState<{ msg: string; type?: 'success' | 'error' } | null>(null);
+
+  function showToast(msg: string, type: 'success' | 'error' = 'success') {
+    setToast({ msg, type });
+    window.setTimeout(() => setToast(null), 2500);
+  }
 
   // Tabs - dynamically filter based on GCP admin status
   const ALL_TABS = ["DAYS", "ITEMS", "USERS"] as const;
@@ -316,6 +325,12 @@ export default function AdminDashboard() {
   // ---------------- RENDER ----------------
   return (
     <div className="min-h-screen bg-white text-black px-4 py-10">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 shadow-lg border ${toast.type === 'error' ? 'bg-red-600 text-white border-red-700' : 'bg-green-600 text-white border-green-700'}`}>
+          {toast.msg}
+        </div>
+      )}
       {!user ? (
         <div className="mx-auto w-full max-w-md rounded-2xl border border-black/10 bg-white p-6 shadow-xl">
           <h1 className="text-3xl text-center font-semibold mb-6">Admin Portal</h1>
@@ -1345,6 +1360,14 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
   const [showNewMenuForm, setShowNewMenuForm] = useState(false);
   const [showNewSectionForm, setShowNewSectionForm] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type?: 'success' | 'error' } | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    window.setTimeout(() => setToast(null), 2500);
+  };
+  
+  // Ref to clear file input when switching items
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New menu draft
   const [menuDraft, setMenuDraft] = useState({ name: "", copyFromDefault: true });
@@ -1353,10 +1376,17 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
   const [sectionDraft, setSectionDraft] = useState({ title: "" });
 
   // Item draft (for new or edit)
-  const [draft, setDraft] = useState<{ name: string; desc: string; price: string; photoUrl: string; priceError: string | null }>({
-    name: "", desc: "", price: "", photoUrl: "", priceError: null
+  const [draft, setDraft] = useState<{ name: string; desc: string; price: string; priceError: string | null; file: File | null }>(
+    {
+    name: "", desc: "", price: "", priceError: null, file: null
   });
 
+  // Clear file input when switching between items or to create mode
+  useEffect(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [editingItemId]);
   const activeMenu = useMemo(() => menus.find(m => m.id === activeMenuId), [menus, activeMenuId]);
   const sections = activeMenu?.sections ?? [];
 
@@ -1386,17 +1416,18 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
       return;
     }
 
+    const newId = crypto.randomUUID();
+
     const nextSections = (m.sections ?? []).map(s => {
       if (s.id !== activeSectionId) return s;
 
       // Build new item without including undefined fields (Firestore rejects undefined)
       const newItem: any = {
-        id: crypto.randomUUID(),
+        id: newId,
         name: draft.name.trim()
       };
-      if (draft.desc.trim()) newItem.desc = draft.desc.trim();
-      if (draft.price.trim()) newItem.price = Number(draft.price.replace(/[^0-9.]/g, '')).toFixed(2);
-      if (draft.photoUrl.trim()) newItem.photoUrl = draft.photoUrl.trim();
+  if (draft.desc.trim()) newItem.desc = draft.desc.trim();
+  if (draft.price.trim()) newItem.price = Number(draft.price.replace(/[^0-9.]/g, '')).toFixed(2);
 
       const nextItems = [
         ...s.items,
@@ -1406,11 +1437,28 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
     });
 
     await updateDoc(doc(db, "menus", activeMenuId), { sections: nextSections });
-    setDraft({ name: "", desc: "", price: "", photoUrl: "", priceError: null });
+
+    // If a file was selected, upload it and update the item's photoUrl in Firestore
+    try {
+      if (draft.file) {
+        await uploadMenuItemPhoto(activeMenuId, activeSectionId, newId, draft.file);
+        showToast('Image uploaded');
+      }
+    } catch (e) {
+      console.error("Failed to upload image for item", e);
+      showToast('Image upload failed', 'error');
+    }
+
+  setDraft({ name: "", desc: "", price: "", priceError: null, file: null });
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 shadow-lg border ${toast.type === 'error' ? 'bg-red-600 text-white border-red-700' : 'bg-green-600 text-white border-green-700'}`}>
+          {toast.msg}
+        </div>
+      )}
       {/* Menu Management */}
       <div className="rounded-2xl border border-black/10 p-5 bg-white">
         <div className="flex justify-between items-center mb-4">
@@ -1594,7 +1642,7 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={async () => {
-                        const menu = menus.find(m => m.id === activeMenuId);
+                        let menu = menus.find(m => m.id === activeMenuId);
                         if (!menu) return;
 
                         const section = menu.sections?.find(s => s.id === activeSectionId);
@@ -1656,7 +1704,7 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
               <button
                 onClick={() => {
                   setEditingItemId(null);
-                  setDraft({ name: "", desc: "", price: "", photoUrl: "", priceError: null });
+                  setDraft({ name: "", desc: "", price: "", priceError: null, file: null });
                 }}
                 className={`text-sm ${editingItemId === null ? 'text-red-600 font-medium' : 'text-black/70'} hover:underline`}
               >
@@ -1686,8 +1734,8 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                               name: item.name,
                               desc: item.desc || "",
                               price: item.price || "",
-                              photoUrl: item.photoUrl || "",
-                              priceError: null
+                              priceError: null,
+                              file: null
                             });
                           }}
                           className="text-sm text-black/70 hover:text-black"
@@ -1765,16 +1813,56 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                 </div>
                 <div className="flex flex-col gap-2 sm:col-span-2">
                   <label className="flex items-center gap-2">
-                    <span className="text-sm text-black/70">Picture URL</span>
+                    <span className="text-sm text-black/70">Upload Image</span>
                     <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">Optional</span>
                   </label>
                   <input
+                    ref={fileInputRef}
                     className="rounded px-3 py-2 border border-black/20"
-                    value={draft.photoUrl}
-                    onChange={e => setDraft(prev => ({ ...prev, photoUrl: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
-                    type="url"
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setDraft(prev => ({ ...prev, file: e.target.files?.[0] ?? null }))}
                   />
+                  {/* Current image preview for edit mode */}
+                  {editingItemId && (() => {
+                    const currentItem = sections.find(s => s.id === activeSectionId)?.items.find(i => i.id === editingItemId);
+                    const currentUrl = currentItem?.photoUrl;
+                    const currentPath = (currentItem as any)?.photoPath as string | undefined;
+                    return currentUrl ? (
+                      <div className="mt-3">
+                        <div className="text-sm text-black/70 mb-2">Currently used image {currentPath ? `(${currentPath})` : ""}</div>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg border border-black/10 inline-block bg-white">
+                            <img src={currentUrl} alt="Current item" className="h-24 w-24 object-cover rounded" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!editingItemId) return;
+                              if (!confirm("Remove this image from the item?")) return;
+                              try {
+                                await deleteMenuItemPhoto(activeMenuId, activeSectionId, editingItemId);
+                                setDraft(prev => ({ ...prev, file: null }));
+                                if (fileInputRef.current) fileInputRef.current.value = "";
+                                // Refresh sections so UI reflects removal immediately
+                                const snap = await getDoc(doc(db, "menus", activeMenuId));
+                                if (snap.exists()) {
+                                  const data = snap.data() as any;
+                                  // Find updated item and no-op; the live list uses Firestore listener elsewhere
+                                }
+                                showToast('Image removed');
+                              } catch (e: any) {
+                                showToast("Failed to remove image", 'error');
+                              }
+                            }}
+                            className="text-sm px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 border border-gray-300"
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -1795,7 +1883,36 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                         const menu = menus.find(m => m.id === activeMenuId);
                         if (!menu) return;
 
-                        const nextSections = menu.sections?.map(s =>
+                        console.log("Edit save: file selected?", !!draft.file, "editingItemId:", editingItemId);
+
+                        // If a new image file was provided, upload it FIRST
+                        let uploaded = false;
+                        if (draft.file && editingItemId) {
+                          console.log("Uploading image...", draft.file.name);
+                          try {
+                            const result = await uploadMenuItemPhoto(activeMenuId, activeSectionId, editingItemId, draft.file);
+                            console.log("Image uploaded successfully:", result);
+                            uploaded = true;
+                            showToast('Image uploaded');
+                          } catch (e) {
+                            console.error("Failed to upload image for edited item", e);
+                            showToast("Failed to upload image", 'error');
+                            return;
+                          }
+                        }
+                        // If we uploaded an image, re-read the latest sections from Firestore to avoid clobbering photoUrl/photoPath
+                        let sourceSections = menu.sections ?? [];
+                        if (uploaded) {
+                          try {
+                            const snap = await getDoc(doc(db, "menus", activeMenuId));
+                            if (snap.exists()) {
+                              const data = snap.data() as any;
+                              sourceSections = data.sections ?? [];
+                            }
+                          } catch {}
+                        }
+
+                        const nextSections = sourceSections.map(s =>
                           s.id === activeSectionId
                             ? {
                                 ...s,
@@ -1814,25 +1931,20 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                                                 } else {
                                                   delete updated.price;
                                                 }
-                                                if (draft.photoUrl.trim()) {
-                                                  updated.photoUrl = draft.photoUrl.trim();
-                                                } else {
-                                                  delete updated.photoUrl;
-                                                }
                                                 return updated as MenuItem;
                                               })()
                                             : i
                                         )
                               }
                             : s
-                        ) ?? [];
+                        );
 
                         await updateDoc(doc(db, "menus", activeMenuId), {
                           sections: nextSections
                         });
 
                         setEditingItemId(null);
-                        setDraft({ name: "", desc: "", price: "", photoUrl: "", priceError: null });
+                        setDraft({ name: "", desc: "", price: "", priceError: null, file: null });
                       }}
                       disabled={!draft.name.trim()}
                       className="rounded bg-red-600 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
@@ -1842,7 +1954,7 @@ function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                     <button
                       onClick={() => {
                         setEditingItemId(null);
-                        setDraft({ name: "", desc: "", price: "", photoUrl: "", priceError: null });
+                        setDraft({ name: "", desc: "", price: "", priceError: null, file: null });
                       }}
                       className="rounded bg-black/10 px-4 py-2 font-medium hover:bg-black/20"
                     >
