@@ -105,6 +105,32 @@ export async function POST(req: NextRequest) {
 
     await transporter.sendMail({ from, to, subject, text, html });
 
+    // Save booking request to Firestore
+    // Import Firestore only when needed (for edge compatibility)
+    const { getFirestore, collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+    const { getApps, getApp, initializeApp } = await import("firebase/app");
+    const config = {
+      apiKey: process.env.NEXT_PUBLIC_FB_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FB_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_FB_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FB_APP_ID,
+      measurementId: process.env.NEXT_PUBLIC_FB_MEASUREMENT_ID,
+    };
+    const app = getApps().length ? getApp() : initializeApp(config);
+    const db = getFirestore(app);
+    await addDoc(collection(db, "bookingRequests"), {
+      name,
+      business,
+      town,
+      date,
+      description,
+      phone,
+      email,
+      createdAt: serverTimestamp(),
+    });
+
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     console.error("[book-request]", e);

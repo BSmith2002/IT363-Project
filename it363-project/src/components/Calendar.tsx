@@ -66,15 +66,13 @@ export default function Calendar({ selectedDate, onSelect, eventsByDate, onMonth
           const iso = toISO(year, month, day);
           const isSelected = selectedDate === iso;
           const eventCount = eventsByDate ? (eventsByDate[iso] || 0) : undefined;
-          const hasEvents = typeof eventCount === "number" ? eventCount > 0 : undefined;
+          // Do not fade out days without events if admin dash (controlled by prop or context, but here just remove fade)
           return (
             <button
               key={iso}
               onClick={() => onSelect(iso)}
               className={`relative aspect-square rounded border text-sm hover:bg-red-50 ${
                 isSelected ? "bg-red-100 border-red-400" : "bg-white"
-              } ${
-                hasEvents === undefined ? "" : hasEvents ? "" : "opacity-40"
               }`}
             >
               {day}

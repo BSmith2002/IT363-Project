@@ -45,7 +45,11 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-20 grid grid-cols-3 items-center">
         {/* Left: Logo */}
         <div className="flex items-center gap-3">
-          <img src="/thestationlogo2.png" alt="The Station logo" className="h-20 w-auto" />
+          <Link href="/" className="focus:outline-none" aria-label="Home">
+            <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <img src="/thestationlogo2.png" alt="The Station logo" className="h-20 w-auto" />
+            </button>
+          </Link>
           <a
             href="https://www.facebook.com/Thestationfoodtruck/"
             target="_blank"
@@ -64,20 +68,25 @@ export default function Header() {
         {/* Center: Nav */}
         <nav className="flex justify-center">
           {/* Desktop nav */}
-          <ul className="hidden md:flex items-center gap-8">
+          <ul className="hidden md:flex items-center gap-16 whitespace-nowrap">
             <li>
-              <Link href="/" className="text-xl hover:underline">
+              <Link href="/" className={`text-xl hover:underline${pathname === '/' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
                 Home
               </Link>
             </li>
             <li>
-              <Link href="/about" className="text-xl hover:underline">
-                About Us
+              <Link href="/about" className={`text-xl hover:underline${pathname === '/about' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
+                Our Journey
               </Link>
             </li>
             <li>
-              <Link href="/menupage" className="text-xl hover:underline">
+              <Link href="/menupage" className={`text-xl hover:underline${pathname === '/menupage' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
                 Menu
+              </Link>
+            </li>
+            <li>
+              <Link href="/calendar" className={`text-xl hover:underline${pathname === '/calendar' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
+                Keep Track
               </Link>
             </li>
           </ul>
@@ -139,6 +148,11 @@ export default function Header() {
               <li>
                 <Link href="/menupage" className="text-base hover:underline" onClick={() => setMobileOpen(false)}>
                   Menu
+                </Link>
+              </li>
+              <li>
+                <Link href="/calendar" className="text-base hover:underline" onClick={() => setMobileOpen(false)}>
+                  Keep Track
                 </Link>
               </li>
               <li className="pt-2">

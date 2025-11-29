@@ -1,14 +1,387 @@
-import ClientHome from "@/components/ClientHome";
+
+
+"use client";
+import { useState, useEffect, useMemo } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import Calendar from "@/components/Calendar";
+import EventList, { type StationEvent } from "@/components/EventList";
+import EventMap from "@/components/EventMap";
+import MenuView from "@/components/MenuView";
+
+type FacebookPost = {
+  id: string | number;
+  text: string;
+  date: string;
+  image: string | null;
+  url?: string;
+};
 
 export default function Home() {
+  const [currentPostIndex, setCurrentPostIndex] = useState(0);
+  const [facebookPosts, setFacebookPosts] = useState<FacebookPost[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+
+  const getTodayISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const [todayISO, setTodayISO] = useState<string>(getTodayISO());
+
+  // Pre-fill event form from query params if present
+  function getQueryParams() {
+    if (typeof window === "undefined") return {};
+    const params = new URLSearchParams(window.location.search);
+    return {
+      date: params.get("date"),
+      title: params.get("title"),
+      location: params.get("location"),
+      description: params.get("description"),
+      phone: params.get("phone"),
+      email: params.get("email")
+    };
+  }
+
+  const queryPrefill = typeof window !== "undefined" ? getQueryParams() : {};
+
+  const [selectedDate, setSelectedDate] = useState<string | null>(queryPrefill.date || todayISO);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<StationEvent | null>(null);
+  const [selectedMenuId, setSelectedMenuId] = useState<string | null>(null);
+  const [eventsByDate, setEventsByDate] = useState<Record<string, number>>({});
+  const [currentMonth, setCurrentMonth] = useState<{ year: number; month: number }>({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth()
+  });
+
+  // Fetch Facebook posts
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        const response = await fetch('/api/facebook/posts');
+        const data = await response.json();
+        if (data.posts && data.posts.length > 0) {
+          setFacebookPosts(data.posts);
+        } else {
+          // Fallback to mock data if API fails
+          setFacebookPosts([
+            {
+              id: 1,
+              text: "🎉 We're at the Downtown Market today! Come grab your favorite cheesesteak from 11 AM - 3 PM!",
+              date: "2 hours ago",
+              image: "/placeholder-truck.jpg"
+            },
+            {
+              id: 2,
+              text: "New menu item alert! 🌶️ Try our Spicy Buffalo Chicken Wrap - it's a game changer!",
+              date: "1 day ago",
+              image: "/placeholder-food.jpg"
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching Facebook posts:', error);
+        // Use fallback data
+        setFacebookPosts([
+          {
+            id: 1,
+            text: "Welcome to The Station! Check back soon for our latest updates.",
+            date: "Recent",
+            image: null
+          }
+        ]);
+      } finally {
+        setLoadingPosts(false);
+      }
+    }
+    fetchPosts();
+  }, []);
+
+  // Auto-cycle through posts every 5 seconds
+  useEffect(() => {
+    if (facebookPosts.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentPostIndex((prev) => (prev + 1) % facebookPosts.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [facebookPosts.length]);
+
+  // Load events for visible month
+  useEffect(() => {
+    async function loadMonth() {
+      const { year, month } = currentMonth;
+      // compute month start/end ISO strings
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0);
+      const startISO = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+      const endISO = `${year}-${String(month + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+
+      // We don't have range queries by dateStr easily unless stored; so fetch all events for month via naive scan.
+      // For simplicity, pull all events and filter client-side (could be optimized with composite index if needed).
+      const snap = await getDocs(collection(db, "events"));
+      const counts: Record<string, number> = {};
+      snap.forEach(docSnap => {
+        const data = docSnap.data() as any;
+        const dateStr = data.dateStr;
+        if (typeof dateStr === "string" && dateStr.startsWith(`${year}-${String(month + 1).padStart(2, "0")}`)) {
+          counts[dateStr] = (counts[dateStr] || 0) + 1;
+        }
+      });
+      setEventsByDate(counts);
+    }
+    loadMonth();
+  }, [currentMonth]);
+
+  // Auto-select and keep in sync with the current time.
+  useEffect(() => {
+    let stop = false;
+
+    async function selectBestForToday(forceDate?: string) {
+      const nowISO = forceDate ?? getTodayISO();
+      // Keep today state current (handles midnight rollover)
+      if (nowISO !== todayISO) setTodayISO(nowISO);
+
+      if (!selectedDate || selectedDate !== nowISO) return;
+      const q = query(collection(db, "events"), where("dateStr", "==", nowISO));
+      const snap = await getDocs(q);
+      const events: StationEvent[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      if (!events.length || stop) return;
+
+      // parse times like "10:00 AM" or "2:30 PM"
+      const parseTime = (t: string): number | null => {
+        if (!t) return null;
+        const match = t.trim().match(/^\d{1,2}:\d{2}\s*([AP]M)$/i);
+        if (!match) return null;
+        let hour = parseInt(match[1], 10);
+        const min = parseInt(match[2], 10);
+        const ampm = match[3].toUpperCase();
+        if (ampm === "PM" && hour !== 12) hour += 12;
+        if (ampm === "AM" && hour === 12) hour = 0;
+        return hour * 60 + min;
+      };
+
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      // Prefer ongoing; else next upcoming; else first
+      const withWindows = events.map(ev => ({
+        ev,
+        start: parseTime(ev.startTime),
+        end: parseTime(ev.endTime)
+      }));
+      const ongoing = withWindows.find(w => w.start != null && w.end != null && nowMinutes >= (w.start as number) && nowMinutes <= (w.end as number))?.ev;
+      const upcoming = withWindows
+        .filter(w => w.start != null && nowMinutes < (w.start as number))
+        .sort((a, b) => (a.start as number) - (b.start as number))[0]?.ev;
+      const pick = ongoing ?? upcoming ?? events[0];
+
+      setSelectedEventId(pick.id);
+      setSelectedEvent(pick);
+      setSelectedMenuId(pick.menuId || null);
+    }
+
+    // Run immediately on mount/update
+    selectBestForToday();
+
+    // Tick every minute to keep selection aligned with current time
+    const id = window.setInterval(() => {
+      const nowISO = getTodayISO();
+      // If the day rolled over, move the calendar to today
+      if (selectedDate !== nowISO) {
+        setSelectedDate(nowISO);
+        setSelectedEventId(null);
+        setSelectedEvent(null);
+        setSelectedMenuId(null);
+      }
+      selectBestForToday(nowISO);
+    }, 60_000);
+
+    return () => {
+      stop = true;
+      window.clearInterval(id);
+    };
+  }, [selectedDate]);
+
+  // TODO: Pass queryPrefill to event form component if you want to pre-fill more fields
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
-      <div className="content-wrapper">
-        <main className="pb-16 px-4 sm:px-6 flex flex-col items-center">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-neutral-900">The Station Foodtruck Site</h1>
-          <ClientHome />
-        </main>
-      </div>
+    <div className="min-h-screen bg-white">
+      <main className="pb-16 px-4 sm:px-6 flex flex-col items-center">
+        {/* Hero Section with Solid Block Background */}
+        <section className="w-full max-w-6xl mb-8 relative">
+          {/* Solid block behind the hero */}
+          <div className="relative bg-red-800 rounded-2xl overflow-hidden shadow-2xl z-10">
+            <div className="relative px-8 py-16 text-center text-white">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">Welcome to The Station</h2>
+              <p className="text-xl md:text-2xl mb-6">See us out on the run? Considering what to get? Maybe you want us to cater an event. We serve all kinds of events, feel free to reach out!</p>
+              <div className="flex gap-4 justify-center flex-wrap">
+                <a href="/menupage" className="bg-white text-red-600 px-8 py-3 rounded-full font-semibold hover:bg-neutral-100 transition">
+                  View Menu
+                </a>
+                <a href="/book" className="bg-red-800 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-900 transition border-2 border-white">
+                  Book Us
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Facebook Posts Carousel */}
+        <section className="w-full max-w-6xl mb-12">
+          <div className="bg-white rounded-xl shadow-lg border border-neutral-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center gap-3">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              <h3 className="text-xl font-bold text-white">Latest Updates</h3>
+            </div>
+            {loadingPosts ? (
+              <div className="h-96 bg-neutral-50 flex items-center justify-center">
+                <div className="text-neutral-500">Loading posts...</div>
+              </div>
+            ) : facebookPosts.length === 0 ? (
+              <div className="h-96 bg-neutral-50 flex items-center justify-center">
+                <div className="text-neutral-500">No posts available</div>
+              </div>
+            ) : (
+              <>
+                <div className="relative h-96 bg-neutral-50">
+                  {facebookPosts.map((post, index) => (
+                    <div
+                      key={post.id}
+                      className={`absolute inset-0 transition-opacity duration-500 ${
+                        index === currentPostIndex ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    >
+                      <div className="h-full flex flex-col md:flex-row">
+                        {post.image && (
+                          <div className="md:w-1/2 h-48 md:h-full bg-neutral-200">
+                            <img 
+                              src={post.image} 
+                              alt="Facebook post"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EAdd Image%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className={`${post.image ? 'md:w-1/2' : 'w-full'} p-8 flex flex-col justify-center`}>
+                          <p className="text-lg text-neutral-800 mb-4">{post.text}</p>
+                          <div className="flex items-center gap-4">
+                            <p className="text-sm text-neutral-500">{post.date}</p>
+                            {post.url && (
+                              <a
+                                href={post.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline flex items-center gap-1"
+                              >
+                                View on Facebook
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-center gap-2 py-4 bg-white">
+                  {facebookPosts.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentPostIndex(index)}
+                      className={`w-2.5 h-2.5 rounded-full transition ${
+                        index === currentPostIndex ? 'bg-blue-600 w-8' : 'bg-neutral-300'
+                      }`}
+                      aria-label={`Go to post ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Awards & Recognition Section */}
+        <section className="w-full max-w-6xl mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-neutral-900 mb-2">Awards & Recognition</h2>
+            <p className="text-neutral-600">Honored to serve our community</p>
+          </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                <span className="text-4xl">🏆</span>
+              </div>
+              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
+              <p className="text-sm text-neutral-600">Add award description here</p>
+              <p className="text-xs text-neutral-500 mt-2">Year</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-4xl">🌟</span>
+              </div>
+              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
+              <p className="text-sm text-neutral-600">Add award description here</p>
+              <p className="text-xs text-neutral-500 mt-2">Year</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center">
+                <span className="text-4xl">🥇</span>
+              </div>
+              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
+              <p className="text-sm text-neutral-600">Add award description here</p>
+              <p className="text-xs text-neutral-500 mt-2">Year</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-4xl">⭐</span>
+              </div>
+              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
+              <p className="text-sm text-neutral-600">Add award description here</p>
+              <p className="text-xs text-neutral-500 mt-2">Year</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Schedule Section Header */}
+        <section className="w-full max-w-6xl mb-6">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-neutral-900 mb-2">Our Schedule</h2>
+            <p className="text-neutral-600 text-lg">Find out where we'll be and what we're serving</p>
+          </div>
+        </section>
+
+        <Calendar
+          selectedDate={selectedDate}
+          eventsByDate={eventsByDate}
+          onMonthChange={(y, m) => setCurrentMonth({ year: y, month: m })}
+          onSelect={(d) => {
+            setSelectedDate(d);
+            setSelectedEventId(null);
+            setSelectedEvent(null);
+            setSelectedMenuId(null);
+          }}
+        />
+        <EventList
+          date={selectedDate}
+          selectedEventId={selectedEventId}
+          onSelectEvent={(event) => {
+            setSelectedEventId(event.id);
+            setSelectedEvent(event);
+            setSelectedMenuId(event.menuId);
+          }}
+        />
+        {/* Only show EventMap after an event is selected */}
+        {selectedEvent && <EventMap event={selectedEvent} />}
+        <MenuView menuId={selectedMenuId} />
+      </main>
     </div>
   );
 }

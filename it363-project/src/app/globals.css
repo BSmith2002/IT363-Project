@@ -24,7 +24,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
+
+
 
 /* Header visibility helpers: when header is visible, push content down by header height.
    The Header component toggles `header-visible` / `header-hidden` on <html>. */
@@ -33,6 +38,15 @@ body {
 .content-wrapper {
   margin-top: var(--header-height);
   transition: margin-top 200ms ease;
+  position: relative;
+  min-height: calc(100vh - var(--header-height));
+  z-index: 10;
+}
+
+/* Ensure main content stays above decorative images */
+.content-wrapper > * {
+  position: relative;
+  z-index: 10;
 }
 
 /* When the header is hidden we add a small padding to maintain some space. */
