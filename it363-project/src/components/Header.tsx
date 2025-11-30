@@ -70,22 +70,22 @@ export default function Header() {
           {/* Desktop nav */}
           <ul className="hidden md:flex items-center gap-16 whitespace-nowrap">
             <li>
-              <Link href="/" className={`text-xl hover:underline${pathname === '/' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
+              <Link href="/" className={`text-xl hover:underline${pathname === '/' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
                 Home
               </Link>
             </li>
             <li>
-              <Link href="/about" className={`text-xl hover:underline${pathname === '/about' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
+              <Link href="/about" className={`text-xl hover:underline${pathname === '/about' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
                 Our Journey
               </Link>
             </li>
             <li>
-              <Link href="/menupage" className={`text-xl hover:underline${pathname === '/menupage' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
+              <Link href="/menupage" className={`text-xl hover:underline${pathname === '/menupage' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
                 Menu
               </Link>
             </li>
             <li>
-              <Link href="/calendar" className={`text-xl hover:underline${pathname === '/calendar' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}>
+              <Link href="/calendar" className={`text-xl hover:underline${pathname === '/calendar' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
                 Keep Track
               </Link>
             </li>

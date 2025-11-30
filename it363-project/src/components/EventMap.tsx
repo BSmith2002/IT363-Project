@@ -82,7 +82,7 @@ export default function EventMap({ event }: { event: StationEvent | null }) {
         <div className="rounded-[24px] bg-black/65 px-5 py-6 sm:px-7 sm:py-8 flex flex-col gap-6">
           <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-red-200/80">Event Location</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-red-800/80">Event Location</p>
               <h3 className="text-2xl font-semibold text-white leading-tight">{event.location || "Event location"}</h3>
             </div>
             <a

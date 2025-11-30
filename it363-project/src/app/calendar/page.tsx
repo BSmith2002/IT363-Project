@@ -98,8 +98,13 @@ export default function CalendarPage() {
   }, [selectedDate]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10">
-      <h1 className="text-3xl font-bold mb-6">Event Calendar</h1>
+    <div className="min-h-screen bg-white flex flex-col items-center py-10">
+      <h1 className="text-3xl font-bold mb-6 text-black">Our Schedule</h1>
+              <section className="w-full max-w-6xl mb-6">
+          <div className="text-center">
+            <p className="text-neutral-600 text-lg">Find out where we'll be and what we're serving</p>
+          </div>
+        </section>
       <div className="w-full max-w-6xl flex flex-col items-center">
         <Calendar
           selectedDate={selectedDate}

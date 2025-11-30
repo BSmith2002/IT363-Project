@@ -43,12 +43,10 @@ export default function MenuPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
       
       {/* Main content wrapper with proper spacing */}
-      <div className="content-wrapper flex-1 bg-gray-50">
-        <main className="pb-20 px-4 sm:px-6 min-h-full">
           <div className="w-full max-w-6xl mx-auto">
             {/* Menu Content */}
             <div className="flex justify-center mb-12">
@@ -66,8 +64,7 @@ export default function MenuPage() {
               )}
             </div>
           </div>
-        </main>
+
       </div>
-    </div>
   );
 }

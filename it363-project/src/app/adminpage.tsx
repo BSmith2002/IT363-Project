@@ -56,7 +56,7 @@ export default function AdminLoginPortal() {
             {error && <div className="text-sm text-yellow-300">{error}</div>}
             <button
               type="submit"
-              className="w-full rounded-md bg-red-600 py-2 font-medium hover:opacity-90"
+              className="w-full rounded-md bg-red-800 py-2 font-medium hover:opacity-90"
             >
               Login
             </button>
@@ -68,7 +68,7 @@ export default function AdminLoginPortal() {
             <h1 className="text-2xl font-semibold">Admin</h1>
             <button
               onClick={handleLogout}
-              className="rounded bg-red-700 px-3 py-1 hover:opacity-90"
+              className="rounded bg-red-800 px-3 py-1 hover:opacity-90"
             >
               Sign out
             </button>

@@ -1141,7 +1141,7 @@ export function DaysTab({
               <p className="text-xs text-black/50">Same shorthand supported; we'll normalize automatically.</p>
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-sm text-black/70">Menu <span className="text-red-600">*</span></label>
+              <label className="text-sm text-black/70">Menu <span className="text-red-800">*</span></label>
               <select
                 className="rounded px-3 py-2 border border-black/20"
                 value={menuId}
@@ -1268,7 +1268,7 @@ export function DaysTab({
                 </p>
               )}
               {mapsError && (
-                <p className="text-xs text-red-600">{mapsError}</p>
+                <p className="text-xs text-red-800">{mapsError}</p>
               )}
               {!hasGeoapifyKey && !mapsError && (
                 <p className="text-xs text-black/60">
@@ -1300,7 +1300,7 @@ export function DaysTab({
                 (!useCustom && !presetTitle) ||
                 (useCustom && (!title.trim() || !location.trim() || !startTime.trim() || !endTime.trim() || !menuId))
               }
-              className="rounded bg-red-600 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
+              className="rounded bg-red-800 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
             >
               Add Event
             </button>
@@ -1308,7 +1308,7 @@ export function DaysTab({
             <>
               <button
                 onClick={saveEdit}
-                className="rounded bg-red-600 text-white px-4 py-2 font-medium hover:opacity-90"
+                className="rounded bg-red-800 text-white px-4 py-2 font-medium hover:opacity-90"
               >
                 Save
               </button>
@@ -1325,7 +1325,7 @@ export function DaysTab({
 
         {/* Event creation feedback */}
         {eventError && (
-          <div className="mt-2 text-red-600 font-semibold">{eventError}</div>
+          <div className="mt-2 text-red-800 font-semibold">{eventError}</div>
         )}
         {eventSuccess && (
           <div className="mt-2 text-green-600 font-semibold">{eventSuccess}</div>
@@ -1351,7 +1351,7 @@ export function DaysTab({
                   📍 {ev.location || "No location"}
                   {ev.menuId ? ` • Menu: ${menuMap.get(ev.menuId) ?? ev.menuId}` : ""}
                   {ev.mapsUrl && (
-                    <span> • <a href={ev.mapsUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">View on Maps 🗺️</a></span>
+                    <span> • <a href={ev.mapsUrl} target="_blank" rel="noopener noreferrer" className="text-red-800 hover:underline">View on Maps 🗺️</a></span>
                   )}
                 </div>
               </div>
@@ -1359,7 +1359,7 @@ export function DaysTab({
                 <button onClick={() => startEdit(ev.id)} className="rounded bg-black/10 px-3 py-1 hover:bg-black/20">
                   Edit
                 </button>
-                <button onClick={() => deleteEvent(ev.id)} className="rounded bg-red-700 text-white px-3 py-1 hover:opacity-90">
+                <button onClick={() => deleteEvent(ev.id)} className="rounded bg-red-800 text-white px-3 py-1 hover:opacity-90">
                   Delete
                 </button>
               </div>

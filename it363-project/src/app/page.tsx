@@ -149,11 +149,12 @@ export default function Home() {
 
       // parse times like "10:00 AM" or "2:30 PM"
       const parseTime = (t: string): number | null => {
-        if (!t) return null;
-        const match = t.trim().match(/^\d{1,2}:\d{2}\s*([AP]M)$/i);
-        if (!match) return null;
+        if (!t || typeof t !== "string") return null;
+        const match = t.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+        if (!match || !match[1] || !match[2] || !match[3]) return null;
         let hour = parseInt(match[1], 10);
         const min = parseInt(match[2], 10);
+        if (!match[3]) return null;
         const ampm = match[3].toUpperCase();
         if (ampm === "PM" && hour !== 12) hour += 12;
         if (ampm === "AM" && hour === 12) hour = 0;
@@ -214,7 +215,7 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl font-bold mb-4">Welcome to The Station</h2>
               <p className="text-xl md:text-2xl mb-6">See us out on the run? Considering what to get? Maybe you want us to cater an event. We serve all kinds of events, feel free to reach out!</p>
               <div className="flex gap-4 justify-center flex-wrap">
-                <a href="/menupage" className="bg-white text-red-600 px-8 py-3 rounded-full font-semibold hover:bg-neutral-100 transition">
+                <a href="/menupage" className="bg-white text-red-800 px-8 py-3 rounded-full font-semibold hover:bg-neutral-100 transition">
                   View Menu
                 </a>
                 <a href="/book" className="bg-red-800 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-900 transition border-2 border-white">

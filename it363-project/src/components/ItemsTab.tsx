@@ -140,7 +140,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
   return (
     <div className="space-y-8 relative">
       {toast && (
-        <div className={`fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 shadow-lg border ${toast.type === 'error' ? 'bg-red-600 text-white border-red-700' : 'bg-green-600 text-white border-green-700'}`}>
+        <div className={`fixed bottom-4 right-4 z-50 rounded-md px-4 py-2 shadow-lg border ${toast.type === 'error' ? 'bg-red-800 text-white border-red-800' : 'bg-green-600 text-white border-green-700'}`}>
           {toast.msg}
         </div>
       )}
@@ -150,7 +150,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
           <h2 className="text-xl font-semibold">Manage Menus</h2>
           <button
             onClick={() => setShowNewMenuForm(true)}
-            className="rounded bg-red-600 text-white px-3 py-1 hover:opacity-90"
+            className="rounded bg-red-800 text-white px-3 py-1 hover:opacity-90"
           >
             Create New Menu
           </button>
@@ -197,7 +197,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                   setMenuDraft({ name: "", copyFromDefault: true });
                   setShowNewMenuForm(false);
                 }}
-                className="rounded bg-red-600 text-white px-4 py-2 hover:opacity-90"
+                className="rounded bg-red-800 text-white px-4 py-2 hover:opacity-90"
               >
                 Create Menu
               </button>
@@ -241,7 +241,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                     await deleteDoc(doc(db, "menus", activeMenuId));
                     setActiveMenuId("");
                   }}
-                  className="rounded bg-red-700 text-white px-3 py-1 hover:opacity-90"
+                  className="rounded bg-red-800 text-white px-3 py-1 hover:opacity-90"
                 >
                   Delete Menu
                 </button>
@@ -256,7 +256,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                   <label className="text-sm text-black/70">Menu Sections</label>
                   <button
                     onClick={() => setShowNewSectionForm(true)}
-                    className="text-sm text-red-600 hover:underline"
+                    className="text-sm text-red-800 hover:underline"
                   >
                     + Add New Section
                   </button>
@@ -295,7 +295,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                           setSectionDraft({ title: "" });
                           setShowNewSectionForm(false);
                         }}
-                        className="rounded bg-red-600 text-white px-3 py-1 hover:opacity-90"
+                        className="rounded bg-red-800 text-white px-3 py-1 hover:opacity-90"
                       >
                         Add Section
                       </button>
@@ -362,7 +362,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                         });
                         setActiveSectionId("");
                       }}
-                      className="text-sm text-red-600 hover:text-red-700"
+                      className="text-sm text-red-800 hover:text-red-800"
                     >
                       Delete Section
                     </button>
@@ -391,7 +391,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                   setEditingItemId(null);
                   setDraft({ name: "", desc: "", price: "", priceError: null, file: null, isSpicy: false });
                 }}
-                className={`text-sm ${editingItemId === null ? 'text-red-600 font-medium' : 'text-black/70'} hover:underline`}
+                className={`text-sm ${editingItemId === null ? 'text-red-800 font-medium' : 'text-black/70'} hover:underline`}
               >
                 + Create New Item
               </button>
@@ -444,7 +444,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                               sections: nextSections
                             });
                           }}
-                          className="text-sm text-red-600 hover:text-red-700"
+                          className="text-sm text-red-800 hover:text-red-800"
                         >
                           Delete
                         </button>
@@ -473,7 +473,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm text-black/70">Price ($)</label>
                   <input
-                    className={`rounded px-3 py-2 border ${draft.priceError ? 'border-red-500' : 'border-black/20'}`}
+                    className={`rounded px-3 py-2 border ${draft.priceError ? 'border-red-800' : 'border-black/20'}`}
                     value={draft.price}
                     onChange={e => {
                       const value = e.target.value;
@@ -485,7 +485,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                     pattern="[0-9]*\.?[0-9]*"
                   />
                   {draft.priceError && (
-                    <div className="text-xs text-red-500">{draft.priceError}</div>
+                    <div className="text-xs text-red-800">{draft.priceError}</div>
                   )}
                 </div>
                 <div className="flex flex-col gap-2 sm:col-span-2">
@@ -568,7 +568,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                   <button
                     onClick={addItem}
                     disabled={!draft.name.trim()}
-                    className="rounded bg-red-600 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
+                    className="rounded bg-red-800 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
                   >
                     Add Item
                   </button>
@@ -649,7 +649,7 @@ export function ItemsTab({ menus }: { menus: MenuDoc[] }) {
                         setDraft({ name: "", desc: "", price: "", priceError: null, file: null, isSpicy: false });
                       }}
                       disabled={!draft.name.trim()}
-                      className="rounded bg-red-600 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
+                      className="rounded bg-red-800 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
                     >
                       Save Changes
                     </button>

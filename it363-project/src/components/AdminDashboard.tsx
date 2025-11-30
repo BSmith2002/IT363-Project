@@ -136,8 +136,8 @@ export default function AdminDashboard() {
               onChange={(e) => setPass(e.target.value)}
               required
             />
-            {error && <div className="text-sm text-red-600">{error}</div>}
-            <button type="submit" className="w-full rounded-md bg-red-600 text-white py-2 font-medium hover:opacity-90">
+            {error && <div className="text-sm text-red-800">{error}</div>}
+            <button type="submit" className="w-full rounded-md bg-red-800 text-white py-2 font-medium hover:opacity-90">
               Login
             </button>
           </form>
@@ -166,7 +166,7 @@ export default function AdminDashboard() {
               )}
             </p>
           </div>
-          <button onClick={() => signOut(auth)} className="rounded bg-red-700 text-white px-3 py-1 hover:opacity-90">
+          <button onClick={() => signOut(auth)} className="rounded bg-red-800 text-white px-3 py-1 hover:opacity-90">
             Sign out
           </button>
         </div>
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`flex-1 px-4 py-3 text-center font-medium transition ${
-                  tab === t ? "bg-red-700 text-white" : "text-black hover:bg-black/5"
+                  tab === t ? "bg-red-800 text-white" : "text-black hover:bg-black/5"
                 }`}
               >
                 {t}
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
               <UsersTab />
             ) : (
               <div className="text-center py-8">
-                <div className="text-red-600 font-medium">Access Denied</div>
+                <div className="text-red-800 font-medium">Access Denied</div>
                 <div className="text-black/60 mt-2">User management requires GCP admin privileges.</div>
               </div>
             )}

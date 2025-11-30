@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
           </div>
 
           {error && (
-            <div className="text-sm text-yellow-300 bg-red-900/50 p-2 rounded">
+            <div className="text-sm text-yellow-300 bg-red-800/50 p-2 rounded">
               {error}
             </div>
           )}
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-red-600 py-2 font-medium hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-md bg-red-800 py-2 font-medium hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Sending..." : "Send Reset Email"}
           </button>
