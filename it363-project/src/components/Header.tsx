@@ -7,6 +7,12 @@ import Link from "next/link";
 export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navItems = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "Our Journey" },
+    { href: "/menupage", label: "Menu" },
+    { href: "/calendar", label: "Keep Track" }
+  ];
 
   // If we're on an admin route or auth helper pages (forgot password), don't render the header.
   // Also mark header as hidden so the content-wrapper doesn't reserve header space.
@@ -36,13 +42,17 @@ export default function Header() {
   }, []);
 
   // header classes: always visible and fixed at top with highest z-index
-  const headerClass = "fixed top-0 left-0 right-0 bg-red-800 text-white shadow z-50";
+  const headerClass = "fixed top-0 left-0 right-0 text-white shadow-xl z-50";
 
   if (isAdminRoute) return null;
 
   return (
     <header className={headerClass} style={{ height: "80px" }}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-20 grid grid-cols-3 items-center">
+      <div className="absolute inset-0 bg-gradient-to-r from-[#2e0d0c] via-[#5e1f1b] to-[#fbbf24]" aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/25 mix-blend-soft-light" aria-hidden="true" />
+      <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-300 via-amber-400 to-orange-500" aria-hidden="true" />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-20 grid grid-cols-3 items-center">
         {/* Left: Logo */}
         <div className="flex items-center gap-3">
           <Link href="/" className="focus:outline-none" aria-label="Home">
@@ -68,27 +78,25 @@ export default function Header() {
         {/* Center: Nav */}
         <nav className="flex justify-center">
           {/* Desktop nav */}
-          <ul className="hidden md:flex items-center gap-16 whitespace-nowrap">
-            <li>
-              <Link href="/" className={`text-xl hover:underline${pathname === '/' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link href="/about" className={`text-xl hover:underline${pathname === '/about' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
-                Our Journey
-              </Link>
-            </li>
-            <li>
-              <Link href="/menupage" className={`text-xl hover:underline${pathname === '/menupage' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
-                Menu
-              </Link>
-            </li>
-            <li>
-              <Link href="/calendar" className={`text-xl hover:underline${pathname === '/calendar' ? ' text-red-200 drop-shadow-[0_0_6px_#fca5a5]' : ''}`}> 
-                Keep Track
-              </Link>
-            </li>
+          <ul className="hidden md:flex items-center gap-10 whitespace-nowrap">
+            {navItems.map(({ href, label }) => {
+              const isActive = pathname === href;
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className={`relative text-lg tracking-wide transition-colors ${
+                      isActive ? "text-white" : "text-white/80 hover:text-white"
+                    }`}
+                  >
+                    <span className="px-1 pb-1">{label}</span>
+                    {isActive && (
+                      <span className="absolute -bottom-1 left-1/2 h-0.5 w-8 -translate-x-1/2 bg-amber-300 rounded-full" aria-hidden="true" />
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
           {/* Mobile toggle */}
           <div className="md:hidden">
@@ -111,17 +119,21 @@ export default function Header() {
         <div className="hidden md:flex justify-end">
           <Link
             href="/book"
-            className="text-lg font-semibold rounded-full bg-white text-red-800 px-5 py-2.5 shadow hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
+            className="inline-flex items-center gap-2 text-lg font-semibold rounded-full bg-white text-red-800 px-5 py-2.5 shadow-lg shadow-black/20 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
           >
-            Book with us!
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 10.5V6a1.5 1.5 0 00-1.5-1.5H6A1.5 1.5 0 004.5 6v12A1.5 1.5 0 006 19.5h13.5A1.5 1.5 0 0021 18v-4.5M9 9h9m-9 7h5" />
+            </svg>
+            Book the truck
           </Link>
         </div>
       </div>
 
       {/* Mobile panel */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-white/20 bg-red-800/98 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
+        <div className="relative md:hidden border-t border-white/20 bg-[#7c0a02]/95 backdrop-blur-sm">
+          <div className="absolute inset-x-0 top-0 h-px bg-white/30" aria-hidden="true" />
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
             <ul className="flex flex-col items-center gap-3">
               <li>
                 <a
@@ -135,33 +147,24 @@ export default function Header() {
                   <span className="text-base">Facebook</span>
                 </a>
               </li>
-              <li>
-                <Link href="/" className="text-base hover:underline" onClick={() => setMobileOpen(false)}>
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-base hover:underline" onClick={() => setMobileOpen(false)}>
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/menupage" className="text-base hover:underline" onClick={() => setMobileOpen(false)}>
-                  Menu
-                </Link>
-              </li>
-              <li>
-                <Link href="/calendar" className="text-base hover:underline" onClick={() => setMobileOpen(false)}>
-                  Keep Track
-                </Link>
-              </li>
+              {navItems.map(({ href, label }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="text-base hover:underline"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
               <li className="pt-2">
                 <Link
                   href="/book"
                   onClick={() => setMobileOpen(false)}
-                  className="inline-block text-base font-semibold rounded-full bg-white text-red-800 px-5 py-2.5 shadow hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
+                  className="inline-block text-base font-semibold rounded-full bg-white text-red-800 px-5 py-2.5 shadow-lg shadow-black/20 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
                 >
-                  Book with us!
+                  Book the truck
                 </Link>
               </li>
             </ul>

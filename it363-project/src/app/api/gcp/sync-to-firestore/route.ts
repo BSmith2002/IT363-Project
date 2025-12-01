@@ -88,7 +88,8 @@ export async function POST(req: Request) {
     const authClient = await auth.getClient();
 
     const crm = google.cloudresourcemanager({ version: "v3", auth: auth });
-    const res = await crm.projects.getIamPolicy({ resource: projectId, requestBody: {} as any });
+    const resourceName = projectId.startsWith("projects/") ? projectId : `projects/${projectId}`;
+    const res = await crm.projects.getIamPolicy({ resource: resourceName, requestBody: {} as any });
     const policy = res.data as any;
     const bindings = policy?.bindings || [];
     const members: string[] = [];

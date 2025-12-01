@@ -98,36 +98,55 @@ export default function CalendarPage() {
   }, [selectedDate]);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center py-10">
-      <h1 className="text-3xl font-bold mb-6 text-black">Our Schedule</h1>
-              <section className="w-full max-w-6xl mb-6">
-          <div className="text-center">
-            <p className="text-neutral-600 text-lg">Find out where we'll be and what we're serving</p>
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+        <section className="relative overflow-hidden rounded-3xl border border-white/60 bg-white/90 p-10 shadow-xl shadow-black/10 backdrop-blur">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(248,113,113,0.25),transparent_60%)]" aria-hidden="true" />
+          <div className="relative text-center">
+            <p className="text-sm uppercase tracking-[0.35em] text-red-700">Find the truck</p>
+            <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-neutral-900">Where we&apos;re serving next</h1>
+            <p className="mt-4 text-neutral-700">
+              Select a date to see our location, serving window, and the menu tied to that stop.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm text-neutral-600">
+              <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">
+                <span className="text-lg">📍</span>
+                Live locations updated daily
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-2 text-amber-700">
+                <span className="text-lg">🕒</span>
+                Lunch & dinner slots
+              </span>
+            </div>
           </div>
         </section>
-      <div className="w-full max-w-6xl flex flex-col items-center">
-        <Calendar
-          selectedDate={selectedDate}
-          eventsByDate={eventsByDate}
-          onMonthChange={(y, m) => setCurrentMonth({ year: y, month: m })}
-          onSelect={(d) => {
-            setSelectedDate(d);
-            setSelectedEventId(null);
-            setSelectedEvent(null);
-            setSelectedMenuId(null);
-          }}
-        />
-        <EventList
-          date={selectedDate}
-          selectedEventId={selectedEventId}
-          onSelectEvent={(event) => {
-            setSelectedEventId(event.id);
-            setSelectedEvent(event);
-            setSelectedMenuId(event.menuId);
-          }}
-        />
-        {selectedEvent && <EventMap event={selectedEvent} />}
-        <MenuView menuId={selectedMenuId} />
+
+        <section className="mt-12 rounded-3xl border border-white/60 bg-white/90 p-6 shadow-xl shadow-black/10 backdrop-blur sm:p-10">
+          <div className="flex flex-col items-center gap-10">
+            <Calendar
+              selectedDate={selectedDate}
+              eventsByDate={eventsByDate}
+              onMonthChange={(y, m) => setCurrentMonth({ year: y, month: m })}
+              onSelect={(d) => {
+                setSelectedDate(d);
+                setSelectedEventId(null);
+                setSelectedEvent(null);
+                setSelectedMenuId(null);
+              }}
+            />
+            <EventList
+              date={selectedDate}
+              selectedEventId={selectedEventId}
+              onSelectEvent={(event) => {
+                setSelectedEventId(event.id);
+                setSelectedEvent(event);
+                setSelectedMenuId(event.menuId);
+              }}
+            />
+            {selectedEvent && <EventMap event={selectedEvent} />}
+            <MenuView menuId={selectedMenuId} />
+          </div>
+        </section>
       </div>
     </div>
   );

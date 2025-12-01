@@ -163,8 +163,12 @@ export default function AdminLoginPortal() {
   // While we have a signed-in user but the allowlist is still loading, show a small loader to avoid flicker
   if (user && loadingAdmins && allowedAdmins.length > 0) {
     return (
-      <div className="min-h-screen bg-neutral-900 text-white grid place-items-center px-4">
-        <div className="animate-pulse opacity-70">Checking access…</div>
+      <div className="relative min-h-screen overflow-hidden bg-[#120707] text-white grid place-items-center px-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2b0a0a] via-[#741010] to-[#f97316] opacity-70" aria-hidden="true" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(0,0,0,0.35),transparent_60%)]" aria-hidden="true" />
+        <div className="relative animate-pulse rounded-full border border-white/30 px-6 py-3 text-sm uppercase tracking-[0.6em] text-white/80">
+          Checking access…
+        </div>
       </div>
     );
   }
@@ -176,64 +180,67 @@ export default function AdminLoginPortal() {
 
   // Otherwise show the login UI
   return (
-    <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl bg-red-800/95 p-6 shadow-xl">
-        <h1 className="text-3xl text-center font-semibold mb-6">Admin Portal</h1>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="User"
-            className="w-full rounded-md px-3 py-2 text-black"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full rounded-md px-3 py-2 text-black"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-            required
-          />
-          {error && <div className="text-sm text-yellow-300">{error}</div>}
+    <div className="relative min-h-screen overflow-hidden bg-[#120707] text-white flex items-center justify-center px-4 py-12">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#280909] via-[#7b0e0e] to-[#f97316] opacity-80" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.45),transparent_60%)]" aria-hidden="true" />
+      <div className="relative w-full max-w-md rounded-3xl border border-white/20 bg-black/40 p-8 shadow-2xl backdrop-blur-md">
+        <div className="text-center">
+          <p className="text-xs uppercase tracking-[0.5em] text-amber-200">Admin access</p>
+          <h1 className="mt-3 text-3xl font-semibold">The Station Control</h1>
+          <p className="mt-3 text-sm text-white/70">Sign in to manage events, menus, and booking requests.</p>
+        </div>
+        <form onSubmit={handleLogin} className="mt-8 space-y-4">
+          <div>
+            <label className="text-xs uppercase tracking-wide text-white/60">Email</label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              className="mt-1 w-full rounded-lg border border-white/20 bg-white/90 px-3 py-2 text-black focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wide text-white/60">Password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              className="mt-1 w-full rounded-lg border border-white/20 bg-white/90 px-3 py-2 text-black focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+              required
+            />
+          </div>
+          {error && <div className="rounded-md bg-red-500/15 px-3 py-2 text-xs text-amber-200">{error}</div>}
           <button
             type="submit"
-            className="w-full rounded-md bg-red-800 py-2 font-medium hover:opacity-90"
+            className="w-full rounded-full bg-amber-400 py-2.5 text-sm font-semibold text-red-900 transition hover:bg-amber-300"
           >
-            Login
+            Sign in
           </button>
         </form>
 
-        <div className="mt-4 flex flex-col items-center">
+        <div className="mt-4">
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            className="w-full rounded-md bg-blue-300 py-2 font-medium hover:opacity-90 flex items-center justify-center gap-2"
+            className="w-full rounded-full bg-white/90 py-2 text-sm font-semibold text-neutral-900 transition hover:bg-white"
           >
-            {/* Simple Google icon (inline SVG) */}
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24" height="24">
-              <path fill="#4285F4" d="M24 9.5c3.54 0 6.73 1.22 9.24 3.22l6.93-6.93C36.36 2.34 30.55 0 24 0 14.64 0 6.27 5.7 2.13 14.02l8.06 6.27C12.7 13.16 17.89 9.5 24 9.5z"/>
-              <path fill="#34A853" d="M46.1 24.5c0-1.64-.15-3.22-.43-4.75H24v9.02h12.44c-.54 2.92-2.18 5.39-4.64 7.06l7.19 5.59C43.73 37.36 46.1 31.41 46.1 24.5z"/>
-              <path fill="#FBBC05" d="M10.19 28.29c-.47-1.41-.74-2.91-.74-4.54s.27-3.13.74-4.54l-8.06-6.27C.73 16.84 0 20.29 0 24c0 3.71.73 7.16 2.13 10.06l8.06-6.27z"/>
-              <path fill="#EA4335" d="M24 48c6.55 0 12.36-2.17 16.93-5.93l-7.19-5.59c-2.01 1.35-4.59 2.15-7.74 2.15-6.11 0-11.3-3.66-13.81-8.79l-8.06 6.27C6.27 42.3 14.64 48 24 48z"/>
-              <path fill="none" d="M0 0h48v48H0z"/>
-            </svg>
-            Sign in with Google
+            Continue with Google
           </button>
         </div>
 
-        <div className="mt-4 text-center">
-          <a 
+        <div className="mt-6 text-center text-xs text-white/70">
+          <a
             href="/forgot-password"
-            className="text-sm text-white/70 hover:text-white underline"
+            className="font-medium text-amber-200 hover:text-white"
           >
             Forgot your password?
           </a>
-        </div>
-
-        <div className="mt-2 text-center">
-          <Link href="/" className="text-sm text-white/70 hover:text-white underline">Return to Home</Link>
+          <div className="mt-2">
+            <Link href="/" className="hover:text-white">Return to site</Link>
+          </div>
         </div>
       </div>
     </div>

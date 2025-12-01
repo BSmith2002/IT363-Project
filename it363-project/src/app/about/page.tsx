@@ -1,7 +1,5 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { useState } from "react";
 
 export default function AboutPage() {
@@ -14,6 +12,29 @@ export default function AboutPage() {
     { src: "/line2.jpg", alt: "Another Line" },
   ];
 
+  const milestones = [
+    {
+      year: "1980s",
+      title: "Neighborhood roots",
+      description: "Rita grew up in the kitchen at Haddad’s restaurant in Peoria, learning hospitality the slow, intentional way."
+    },
+    {
+      year: "2000s",
+      title: "Family-run diners",
+      description: "Rita and Andy opened restaurants together, refining catering menus and serving comfort food to every table."
+    },
+    {
+      year: "2021",
+      title: "The Station hits the road",
+      description: "The food truck launched to bring that same quality to festivals, workplaces, and celebrations across Illinois."
+    },
+    {
+      year: "Today",
+      title: "Catering, festivals, and more",
+      description: "From corporate lunches to weddings, The Station continues to roll with new flavors and familiar favorites."
+    }
+  ];
+
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
@@ -23,125 +44,150 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 flex flex-col">
-      <Header />
-      
-      <div className="content-wrapper flex-1 bg-white">
-        <main className="pb-20 px-4 sm:px-6 lg:px-8">
-          <div className="w-full max-w-7xl mx-auto">
-
-            {/* Main Content Grid */}
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-12 lg:mb-16">
-              {/* Left Column - Image */}
-              <div className="flex items-start">
-                <div className="w-full rounded-xl overflow-hidden shadow-2xl border-4 border-red-800 transform hover:scale-[1.02] transition-transform duration-300">
-                  <img 
-                    src="/truckimage.jpg" 
-                    alt="Our Team" 
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              </div>
-
-              {/* Right Column - Our Journey Section */}
-              <div className="flex flex-col justify-center">
-                <h2 className="text-2xl lg:text-3xl font-bold text-neutral-800 mb-4">Experience and Heart</h2>
-                <p className="text-neutral-600 leading-relaxed mb-4 italic text-lg">
-                  Since 2021
-                </p>
-                <p className="text-neutral-700 leading-relaxed mb-4 text-base lg:text-lg">
-                  Rita has been in the restaurant business for 35 years. She first started when she was with her parents at Haddad's restaurant in Peoria, Illinois. Andy and Rita then opened up restaurants of their own since they both shared a passion of cooking and catering. Their love of serving people and making people happy with their food led them to opening their first food truck in 2021.  They still continue to cater both with their truck and table side service.
-                </p>
-                <p className="text-neutral-700 leading-relaxed text-base lg:text-lg">
-                  With the food truck they have been to many cities and towns. It's been running through thick and thin for multiple years, and more to come!  While running the truck earned numerous awards including Choice Awards Platinum truck and West bluff business of the year 2025.
-                </p>
+    <div className="min-h-screen">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+        <section className="relative overflow-hidden rounded-3xl border border-white/60 bg-white/90 p-10 shadow-xl shadow-black/10 backdrop-blur">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.35),transparent_55%)]" aria-hidden="true" />
+          <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+            <div>
+              <p className="text-sm uppercase tracking-[0.35em] text-red-700">Our story</p>
+              <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-neutral-900">Family recipes on four wheels</h1>
+              <p className="mt-5 text-neutral-700">
+                For over three decades Rita and Andy have been feeding Central Illinois—from neighborhood diners to full-service catering. The Station Food Truck lets us carry that legacy anywhere people gather, so every event feels a little more like home.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-600">
+                <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">
+                  <span className="text-lg">🍲</span>
+                  35+ years of hospitality
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-2 text-amber-700">
+                  <span className="text-lg">🚚</span>
+                  2021 truck launch
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
+                  <span className="text-lg">🎉</span>
+                  Weddings, festivals & pop-ups
+                </span>
               </div>
             </div>
-
-            {/* Bottom Section - Mission and Additional Image */}
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-              {/* Left Column - Mission Statement */}
-              <div className="space-y-6 flex flex-col justify-center">
-                <div>
-                  <p className="text-neutral-700 leading-relaxed mb-4 text-base lg:text-lg">
-                    Serving your local festival, wedding, or even at your business, The Station provides service your stomach will crave.
-                  </p>
-                  <p className="text-neutral-700 leading-relaxed mb-4 text-base lg:text-lg">
-                    Over the years, we've added new items to expand your taste buds, and with more years to come, we hope to expand them even further.
-                  </p>
-                  <p className="text-neutral-700 leading-relaxed mb-6 text-base lg:text-lg">
-                    We offer both our food truck service, and also our catering service for events! Feel free to reach out for more info! Check the Book with us page for more!
-                  </p>
-                  <a href="/book" className="bg-red-800 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-800 transition border-2 border-white">
-                  Book Us
-                </a>
-                </div>
-
-                {/* Quote/Testimonial Box */}
-                <div className="bg-gray-50 border-l-4 border-red-800 p-6 rounded-r-lg shadow-md">
-                  <blockquote className="text-lg lg:text-xl italic text-neutral-700 mb-2">
-                    "At The Station, we're commited to delivering your food with a speed you'll love, and a quality you'll love even more."
-                  </blockquote>
-                </div>
-              </div>
-
-              {/* Right Column - Location Image Slideshow */}
-              <div className="flex flex-col items-center">
-                <div className="w-full relative">
-                  <div className="w-full rounded-xl overflow-hidden shadow-2xl border-4 border-red-800 h-64 sm:h-80 lg:h-96 xl:h-[500px]">
-                    <img 
-                      src={images[currentImageIndex].src}
-                      alt={images[currentImageIndex].alt}
-                      className="w-full h-full object-cover transition-opacity duration-300"
-                    />
-                  </div>
-                  
-                  {/* Previous Button */}
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-red-800/90 hover:bg-red-800 text-white rounded-full p-3 transition-all shadow-lg hover:scale-110"
-                    aria-label="Previous image"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  {/* Next Button */}
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-red-800/90 hover:bg-red-800 text-white rounded-full p-3 transition-all shadow-lg hover:scale-110"
-                    aria-label="Next image"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  
-                  {/* Image Indicators */}
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">
-                    {images.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`w-2.5 h-2.5 rounded-full transition-all ${
-                          index === currentImageIndex 
-                            ? "bg-red-800 w-8 shadow-lg" 
-                            : "bg-white/70 hover:bg-white"
-                        }`}
-                        aria-label={`Go to image ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-                
-                <p className="text-neutral-600 italic text-center mt-4">
-                  Come and see us in action!
-                </p>
+            <div className="relative h-72 overflow-hidden rounded-2xl shadow-lg shadow-black/15 lg:h-full">
+              <img src="/truckimage.jpg" alt="The Station team" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+              <div className="absolute bottom-4 left-4 text-sm font-semibold text-white">
+                Full-flavor cooking, flexible catering.
               </div>
             </div>
           </div>
-        </main>
+        </section>
+
+        <section className="mt-12 grid gap-8 lg:grid-cols-[0.6fr_1.4fr]">
+          <div className="rounded-3xl border border-white/60 bg-white/90 p-8 shadow-lg shadow-black/10 backdrop-blur">
+            <h2 className="text-2xl font-semibold text-neutral-900">Timeline</h2>
+            <p className="mt-3 text-sm text-neutral-600">A few stops along the way.</p>
+            <ul className="mt-6 space-y-6">
+              {milestones.map((milestone) => (
+                <li key={milestone.year} className="relative pl-6">
+                  <span className="absolute left-0 top-1 h-4 w-4 rounded-full bg-red-700" aria-hidden="true" />
+                  <p className="text-xs uppercase tracking-wide text-red-700">{milestone.year}</p>
+                  <h3 className="text-base font-semibold text-neutral-900">{milestone.title}</h3>
+                  <p className="text-sm text-neutral-600">{milestone.description}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-3xl border border-white/60 bg-white/90 p-8 shadow-lg shadow-black/10 backdrop-blur">
+            <h2 className="text-2xl font-semibold text-neutral-900">Made with the crowd in mind</h2>
+            <p className="mt-4 text-neutral-700 leading-relaxed">
+              The Station thrives on feeding crowds that want something familiar but never boring. From slow-smoked meats to vegetarian wraps and loaded fries, our menus are flexible enough to match your vibe and your budget. We prep fresh for every stop so that each bite feels handcrafted.
+            </p>
+            <p className="mt-4 text-neutral-700 leading-relaxed">
+              Beyond events, we work closely with local businesses for on-site lunches and appreciation days. Need a curated menu? We&apos;ll partner with you to create options that match dietary needs and service windows.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-600">
+              <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">
+                <span className="text-lg">🌶️</span>
+                Flavor-forward menu rotations
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-2 text-amber-700">
+                <span className="text-lg">🤝</span>
+                Flexible catering packages
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
+                <span className="text-lg">✨</span>
+                Awarded West Bluff Business of the Year 2025
+              </span>
+            </div>
+            <a
+              href="/book"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-red-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
+            >
+              Book the truck
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </section>
+
+        <section className="mt-12 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
+          <div className="rounded-3xl border border-white/60 bg-white/90 p-8 shadow-lg shadow-black/10 backdrop-blur">
+            <h2 className="text-2xl font-semibold text-neutral-900">Rolling gallery</h2>
+            <p className="mt-2 text-sm text-neutral-600">Scenes from the road.</p>
+            <div className="relative mt-6">
+              <div className="w-full overflow-hidden rounded-2xl shadow-lg shadow-black/15">
+                <img
+                  src={images[currentImageIndex].src}
+                  alt={images[currentImageIndex].alt}
+                  className="h-72 w-full object-cover transition-all duration-500"
+                />
+              </div>
+              <button
+                onClick={prevImage}
+                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white transition hover:bg-black/80"
+                aria-label="Previous image"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white transition hover:bg-black/80"
+                aria-label="Next image"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2 rounded-full bg-black/40 px-4 py-2">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`h-2 rounded-full transition ${index === currentImageIndex ? "w-8 bg-white" : "w-2 bg-white/70"}`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/60 bg-white/90 p-8 shadow-lg shadow-black/10 backdrop-blur">
+            <h2 className="text-2xl font-semibold text-neutral-900">What drives us</h2>
+            <blockquote className="mt-4 text-lg italic text-neutral-700">
+              “At The Station we&apos;re committed to quick lines, hot plates, and the kind of hospitality that keeps people coming back for seconds.”
+            </blockquote>
+            <p className="mt-4 text-sm text-neutral-600">
+              Rita & Andy · Owners
+            </p>
+            <div className="mt-8 space-y-4 text-sm text-neutral-700">
+              <p>• Quality ingredients, handled with care.</p>
+              <p>• A menu that travels well but always feels handcrafted.</p>
+              <p>• Partnerships with local events, breweries, and community fundraisers.</p>
+              <p>• A service team that remembers faces and favorites.</p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
