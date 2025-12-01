@@ -50,20 +50,20 @@ export default function MenuPage() {
               <p className="text-sm uppercase tracking-[0.35em] text-red-700">On the menu</p>
               <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-neutral-900">Comfort classics from The Station</h1>
               <p className="mt-4 max-w-2xl text-neutral-700">
-                Our menu rotates with every stop. We lean into smoked meats, hearty sandwiches, and shareable sides that keep your crowd happy. Explore what we&apos;re serving today and keep an eye out for seasonal favorites.
+                Our menu contains our classics, but new options pop up often! We lean into our specialty burgers, hearty wraps, and shareable fries that keep your crowd happy. Explore what we're serving today and keep an eye out for new options at the event!
               </p>
               <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-600">
                 <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">
                   <span className="text-lg">🔥</span>
-                  Smoked-to-order specials
+                  Spicy and bold flavors
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-2 text-amber-700">
                   <span className="text-lg">🍽️</span>
-                  Vegetarian-friendly picks
+                  Gluten-free accommodations available
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
                   <span className="text-lg">🥤</span>
-                  Ask about drinks & desserts
+                  Ask about catering and diet options!
                 </span>
               </div>
             </div>
@@ -71,7 +71,7 @@ export default function MenuPage() {
               <div className="rounded-2xl bg-white/90 p-6 shadow-lg shadow-black/10">
                 <h2 className="text-lg font-semibold text-neutral-900">Need a custom menu?</h2>
                 <p className="mt-2 text-sm text-neutral-600">
-                  We tailor menus for weddings, festivals, and corporate lunches. Let us know what you&apos;re craving and we&apos;ll build a flavorful lineup.
+                  We tailor menus for weddings, catering, and corporate lunches. Let us know what you&apos;re craving and we&apos;ll build a flavorful lineup.
                 </p>
                 <a
                   href="/book"
@@ -89,13 +89,13 @@ export default function MenuPage() {
 
         <section className="mt-12 flex justify-center">
           {loading ? (
-            <div className="rounded-2xl border border-white/60 bg-white/90 p-8 text-center text-neutral-500 shadow-lg shadow-black/10 backdrop-blur">
+            <div className="rounded-2xl border border-white/60 p-8 text-center text-neutral-500 shadow-lg shadow-black/10 backdrop-blur">
               Loading menu…
             </div>
           ) : defaultMenuId ? (
             <MenuView menuId={defaultMenuId} />
           ) : (
-            <div className="rounded-2xl border border-white/60 bg-white/90 p-8 text-center shadow-lg shadow-black/10 backdrop-blur">
+            <div className="rounded-2xl border border-white/60 p-8 text-center shadow-lg shadow-black/10 backdrop-blur">
               <h3 className="text-lg font-semibold text-neutral-900">Menu on the way</h3>
               <p className="mt-2 text-neutral-600">We&apos;re updating options for the next stop. Check back soon!</p>
             </div>

@@ -111,7 +111,7 @@ export default function CalendarPage() {
             <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm text-neutral-600">
               <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">
                 <span className="text-lg">📍</span>
-                Live locations updated daily
+                Live locations updated on the calendar
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-2 text-amber-700">
                 <span className="text-lg">🕒</span>

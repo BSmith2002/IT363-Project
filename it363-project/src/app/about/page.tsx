@@ -114,7 +114,15 @@ export default function AboutPage() {
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
                 <span className="text-lg">✨</span>
-                Awarded West Bluff Business of the Year 2025
+                West Bluff Business of the Year winner
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
+                <span className="text-lg">✨</span>
+                Taste of Peoria best Entree
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
+                <span className="text-lg">✨</span>
+                Choice Awards Platinum Food Truck
               </span>
             </div>
             <a

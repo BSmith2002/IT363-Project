@@ -21,6 +21,14 @@ export default function Home() {
   const [currentPostIndex, setCurrentPostIndex] = useState(0);
   const [facebookPosts, setFacebookPosts] = useState<FacebookPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+
+  // --- Social Meta Tags for Facebook Sharing ---
+  // Add these tags to the <head> using next/head
+  // You can adjust the content as needed for your brand/page
+  const metaTitle = "The Station Food Truck | Central Illinois Comfort Food";
+  const metaDescription = "Smoked sandwiches, comfort classics, and daily specials. Find The Station Food Truck around Peoria or book us for your next event.";
+  const metaImage = "/foodtruck.jpg";
+  const metaUrl = "https://thestationfoodtruck.com/";
   const signatureBites = [
     {
       title: "Smoked Station Burger",
@@ -225,8 +233,26 @@ export default function Home() {
 
   // TODO: Pass queryPrefill to event form component if you want to pre-fill more fields
   return (
-    <div className="min-h-screen">
-      <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
+      <>
+        {/* Social Meta Tags for Facebook, Twitter, and Open Graph */}
+        <head>
+          <title>{metaTitle}</title>
+          <meta name="description" content={metaDescription} />
+          {/* Open Graph / Facebook */}
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={metaUrl} />
+          <meta property="og:title" content={metaTitle} />
+          <meta property="og:description" content={metaDescription} />
+          <meta property="og:image" content={metaImage} />
+          {/* Twitter */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:url" content={metaUrl} />
+          <meta name="twitter:title" content={metaTitle} />
+          <meta name="twitter:description" content={metaDescription} />
+          <meta name="twitter:image" content={metaImage} />
+        </head>
+        <div className="min-h-screen">
+          <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
         <section className="relative w-full max-w-6xl mb-12">
           <div className="relative overflow-hidden rounded-3xl shadow-2xl">
             <img src="/foodtruck.jpg" alt="The Station food truck" className="absolute inset-0 h-full w-full object-cover" />
@@ -238,20 +264,29 @@ export default function Home() {
                 The Station Food Truck
               </h1>
               <p className="mt-6 max-w-2xl text-lg md:text-xl text-white/85">
-                Central Illinois comfort food, smoked sandwiches, and plenty of smiles. Find us around town or bring the truck straight to your next event.
+                Central Illinois comfort food, grilled sandwiches, and plenty of smiles. Find us around your town or bring the truck straight to your next event.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <a
                   href="/menupage"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3 text-base font-semibold text-red-800 shadow-lg shadow-black/20 transition hover:bg-amber-50"
                 >
-                  View today's menu
+                  View our Menu
+                </a>
+                <a
+                  href="/calendar"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/70 bg-white/10 px-7 py-3 text-base font-semibold text-white transition hover:bg-white/20"
+                >
+                  Our Calendar
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7l7 7-7 7" />
+                  </svg>
                 </a>
                 <a
                   href="/book"
                   className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/70 bg-white/10 px-7 py-3 text-base font-semibold text-white transition hover:bg-white/20"
                 >
-                  Book the truck
+                  Book with Us
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7l7 7-7 7" />
                   </svg>
@@ -260,11 +295,11 @@ export default function Home() {
               <div className="mt-10 flex flex-wrap gap-3 text-sm text-white/85">
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
                   <span className="text-lg">🔥</span>
-                  Slow-smoked favorites
+                  Experienced and Passionate
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
                   <span className="text-lg">🚚</span>
-                  Pop-ups · Weddings · Corporate lunch
+                  Festivals · Lunches · And More!
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
                   <span className="text-lg">📍</span>
@@ -275,22 +310,22 @@ export default function Home() {
                 <div className="flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-3">
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-lg">⏱️</span>
                   <div>
-                    <p className="font-semibold">Lunch · Dinner</p>
-                    <p>Check schedule for hours</p>
+                    <p className="font-semibold">Breakfast · Lunch · Dinner</p>
+                    <p>Anytime for hungry mouths</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-3">
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-lg">🍟</span>
                   <div>
-                    <p className="font-semibold">Fresh & made-to-order</p>
-                    <p>Never frozen, always flavorful</p>
+                    <p className="font-semibold">Speed and Quality</p>
+                    <p>Always ready for any event</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-3">
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-lg">☎️</span>
                   <div>
                     <p className="font-semibold">Ready to book?</p>
-                    <p>Call (309) 453-6700</p>
+                    <p>Check out the Booking Tab!</p>
                   </div>
                 </div>
               </div>
@@ -308,12 +343,12 @@ export default function Home() {
             <article className="rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-black/10 backdrop-blur">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">2</div>
               <h2 className="mt-4 text-xl font-semibold text-neutral-900">Choose your favorites</h2>
-              <p className="mt-2 text-sm text-neutral-600">Browse the rotating menu, from smoked meats to wraps and comfort classics, all cooked to order.</p>
+              <p className="mt-2 text-sm text-neutral-600">Browse the rotating menu, from specialty burgers to wraps and fries, all ready for your tastebuds.</p>
             </article>
             <article className="rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-black/10 backdrop-blur">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-800">3</div>
               <h2 className="mt-4 text-xl font-semibold text-neutral-900">Bring us to you</h2>
-              <p className="mt-2 text-sm text-neutral-600">Booking is simple. Tell us about your event and we’ll craft a menu that fits your crowd.</p>
+              <p className="mt-2 text-sm text-neutral-600">Booking is simple. Tell us about your event and we’ll work it out to fit your accommodations.</p>
             </article>
           </div>
         </section>
@@ -371,7 +406,21 @@ export default function Home() {
                         )}
                         <div className={`${post.image ? "md:w-1/2" : "w-full"} flex flex-col justify-center p-8`}
                         >
-                          <p className="text-lg text-neutral-800 mb-4 leading-relaxed">{post.text}</p>
+                          <p
+                            className="text-lg text-neutral-800 mb-2 leading-relaxed line-clamp-4 sm:line-clamp-none"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 4,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              wordBreak: 'break-word',
+                              maxWidth: '100%',
+                              paddingRight: '2px'
+                            }}
+                          >
+                            {post.text}
+                          </p>
                           <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
                             <span>{post.date}</span>
                             {post.url && (
@@ -407,63 +456,8 @@ export default function Home() {
             )}
           </div>
         </section>
-
-        <section className="w-full max-w-6xl mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-neutral-900">Signature bites</h2>
-            <p className="mt-2 text-neutral-600">A few crowd-pleasers you’ll find on rotation.</p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            {signatureBites.map((item) => (
-              <article key={item.title} className="flex flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/80 shadow-lg shadow-black/10 backdrop-blur">
-                <div className="h-48 w-full overflow-hidden">
-                  <img src={item.image} alt={item.title} className="h-full w-full object-cover transition-transform duration-700 hover:scale-105" />
-                </div>
-                <div className="flex flex-1 flex-col gap-3 p-6">
-                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 uppercase tracking-wide">
-                    {item.highlight}
-                  </span>
-                  <h3 className="text-xl font-semibold text-neutral-900">{item.title}</h3>
-                  <p className="text-sm text-neutral-600">{item.description}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="w-full max-w-6xl">
-          <div className="rounded-3xl border border-white/60 bg-white/90 p-6 shadow-xl shadow-black/10 backdrop-blur sm:p-10">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-neutral-900">Track the truck</h2>
-              <p className="mt-3 text-neutral-600">Pick a date to see where we’re headed and preview the menu for that stop.</p>
-            </div>
-            <div className="mt-10 flex flex-col items-center gap-10">
-              <Calendar
-                selectedDate={selectedDate}
-                eventsByDate={eventsByDate}
-                onMonthChange={(y, m) => setCurrentMonth({ year: y, month: m })}
-                onSelect={(d) => {
-                  setSelectedDate(d);
-                  setSelectedEventId(null);
-                  setSelectedEvent(null);
-                  setSelectedMenuId(null);
-                }}
-              />
-              <EventList
-                date={selectedDate}
-                selectedEventId={selectedEventId}
-                onSelectEvent={(event) => {
-                  setSelectedEventId(event.id);
-                  setSelectedEvent(event);
-                  setSelectedMenuId(event.menuId);
-                }}
-              />
-              {selectedEvent && <EventMap event={selectedEvent} />}
-              <MenuView menuId={selectedMenuId} />
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+        </main>
+      </div>
+      </>
   );
 }

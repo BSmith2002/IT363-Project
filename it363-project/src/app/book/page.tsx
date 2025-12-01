@@ -94,7 +94,7 @@ export default function BookPage() {
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-600">
               <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">
                 <span className="text-lg">👥</span>
-                Minimum 50 guests recommended
+                Pricing based on event and attendance
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-2 text-amber-700">
                 <span className="text-lg">🍽️</span>
@@ -102,7 +102,7 @@ export default function BookPage() {
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
                 <span className="text-lg">📆</span>
-                Best to book 3-6 weeks out
+                Best to book multiple weeks out
               </span>
             </div>
           </div>
@@ -233,15 +233,12 @@ export default function BookPage() {
             <li>
               <span className="font-semibold text-neutral-900">Email:</span> <a className="text-red-800 hover:underline" href="mailto:speck4193@gmail.com">speck4193@gmail.com</a>
             </li>
-            <li>
-              <span className="font-semibold text-neutral-900">Turnaround:</span> We typically confirm within 2 business days.
-            </li>
           </ul>
           <div className="mt-6 rounded-2xl bg-red-50/80 p-4 text-sm text-red-900">
             <p className="font-semibold">Helpful tips</p>
             <ul className="mt-2 space-y-1">
               <li>• Include rough headcount so we can right-size the menu.</li>
-              <li>• Share load-in details if the truck spot is tricky.</li>
+              <li>• Share parking and directions details if the truck spot is tricky.</li>
               <li>• Rain plan? Let us know so we can prep.</li>
             </ul>
           </div>

@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --header-height: 80px;
+  --header-height: 15px;
 }
 
 @theme inline {
