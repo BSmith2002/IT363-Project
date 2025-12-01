@@ -66,15 +66,14 @@ export default function Calendar({ selectedDate, onSelect, eventsByDate, onMonth
           const iso = toISO(year, month, day);
           const isSelected = selectedDate === iso;
           const eventCount = eventsByDate ? (eventsByDate[iso] || 0) : undefined;
-          const hasEvents = typeof eventCount === "number" ? eventCount > 0 : undefined;
+          // Fade out days without events
+          const faded = typeof eventCount === "number" && eventCount === 0;
           return (
             <button
               key={iso}
               onClick={() => onSelect(iso)}
               className={`relative aspect-square rounded border text-sm hover:bg-red-50 ${
-                isSelected ? "bg-red-100 border-red-400" : "bg-white"
-              } ${
-                hasEvents === undefined ? "" : hasEvents ? "" : "opacity-40"
+                isSelected ? "bg-red-50 border-red-800" : faded ? "bg-gray-100 text-gray-400" : "bg-white"
               }`}
             >
               {day}
@@ -83,7 +82,7 @@ export default function Calendar({ selectedDate, onSelect, eventsByDate, onMonth
                   {Array.from({ length: Math.min(eventCount, 5) }).map((_, idx) => (
                     <span
                       key={idx}
-                      className="inline-block h-1.5 w-1.5 rounded-full bg-red-600"
+                      className="inline-block h-1.5 w-1.5 rounded-full bg-red-800"
                     />
                   ))}
                 </div>

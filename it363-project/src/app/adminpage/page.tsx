@@ -18,7 +18,7 @@ export default function AdminLoginPortal() {
   const [user, setUser] = useState<null | { email: string }>(null);
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
-  const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
   // Allowlist loaded from Firestore
   const [allowedAdmins, setAllowedAdmins] = useState<string[]>([]);
@@ -199,7 +199,7 @@ export default function AdminLoginPortal() {
           {error && <div className="text-sm text-yellow-300">{error}</div>}
           <button
             type="submit"
-            className="w-full rounded-md bg-red-600 py-2 font-medium hover:opacity-90"
+            className="w-full rounded-md bg-red-800 py-2 font-medium hover:opacity-90"
           >
             Login
           </button>

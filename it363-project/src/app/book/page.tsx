@@ -172,7 +172,7 @@ export default function BookPage() {
             </div>
           </div>
 
-          {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
+          {err && <div className="mt-3 text-sm text-red-800">{err}</div>}
           {msg && <div className="mt-3 text-sm text-green-700">{msg}</div>}
 
           {siteKey && (
@@ -190,7 +190,7 @@ export default function BookPage() {
             <button
               type="submit"
               disabled={busy || (Boolean(siteKey) && !captchaToken)}
-              className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white font-medium hover:opacity-90 disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-md bg-red-800 px-4 py-2 text-white font-medium hover:opacity-90 disabled:opacity-60"
             >
               {busy ? "Sending…" : "Submit Request"}
             </button>
@@ -219,7 +219,7 @@ export default function BookPage() {
             <p className="mt-1">Looking forward to serving your event!</p>
           </div>
           <div className="mt-6 text-sm">
-            <Link href="/" className="text-red-600 hover:underline">Back to Home</Link>
+            <Link href="/" className="text-red-800 hover:underline">Back to Home</Link>
           </div>
         </aside>
         </div>

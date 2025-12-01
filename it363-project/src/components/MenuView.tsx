@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, getDocs, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 type MenuItem = {
@@ -11,6 +11,7 @@ type MenuItem = {
   price?: string;
   photoUrl?: string; // optional; if absent we'll derive /menu/<id>.jpg
   photoUpdatedAt?: number; // used to bust cache when image is replaced
+  isSpicy?: boolean;
 };
 
 type MenuSection = {
@@ -43,13 +44,13 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
         const loaded = snap.exists() ? ({ id: snap.id, ...(snap.data() as any) }) : null;
         setMenu(loaded);
         if (loaded?.sections?.length) {
-          // Try to auto-select "Sandwiches & Wraps" (case insensitive, ignore punctuation)
           const targetTitle = "sandwiches & wraps";
           const found = loaded.sections.find((s: MenuSection) => s.title.trim().toLowerCase() === targetTitle);
           setSelectedSectionId(found ? found.id : loaded.sections[0].id);
         } else {
           setSelectedSectionId(null);
         }
+        // Do not fetch event location for menu page
       } catch (e) {
         console.error("[MenuView] Firestore error:", e);
         setMenu(null);
@@ -78,11 +79,19 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
 
   return (
     <div className="w-full max-w-3xl mt-8 text-neutral-900">
+      {/* Removed Google Maps embed for menu page */}
       {menu?.name && <h3 className="text-2xl font-bold mb-4"></h3>}
+
+      {/* Basket pricing notice */}
+      <div className="mb-6 text-center">
+        <p className="text-lg font-bold text-neutral-800">
+          All Baskets come with fries: +$3
+        </p>
+      </div>
 
       {/* Section selector */}
       {menu?.sections?.length ? (
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap gap-2 justify-center">
           {menu.sections.map(sec => {
             const active = sec.id === selectedSectionId;
             return (
@@ -90,7 +99,7 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
                 key={sec.id}
                 type="button"
                 onClick={() => setSelectedSectionId(sec.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium border transition ${active ? "bg-red-600 text-white border-red-600" : "bg-white text-neutral-800 border-neutral-300 hover:bg-neutral-50"}`}
+                className={`px-4 py-2 rounded-full text-sm font-medium border transition ${active ? "bg-red-800 text-white border-red-800" : "bg-white text-neutral-800 border-neutral-300 hover:bg-neutral-50"}`}
               >
                 {sec.title}
               </button>
@@ -103,32 +112,29 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
 
       {/* Selected section items */}
       {selectedSection ? (
-        <div className="mb-8">
-          <div className="bg-red-600 text-white px-3 py-2 rounded-t-xl font-semibold tracking-wide">
-            {selectedSection.title}
-          </div>
-          <ul className="divide-y divide-neutral-200 rounded-b-xl border border-t-0 border-neutral-200 bg-white">
-            {(selectedSection.items ?? []).map(it => {
-              // Check if this is the steak philly item (by name or ID)
-              const isSteakPhilly = it.name.toLowerCase().includes('steak philly') || it.id === 'phillytemp';
-              const imageSrc = it.photoUrl
-                ? (it.photoUpdatedAt ? `${it.photoUrl}${it.photoUrl.includes('?') ? '&' : '?'}v=${it.photoUpdatedAt}` : it.photoUrl)
-                : (isSteakPhilly ? '/phillytemp.jpg' : `/${it.id}.jpg`);
-              const hasImage = !!it.photoUrl || isSteakPhilly;
-              
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 p-6 bg-white">
+            {(selectedSection.items ?? []).map((it, index) => {
+              const imageSrc = it.photoUrl;
+              const hasImage = !!it.photoUrl;
               return (
-                <li key={it.id} className="flex items-start justify-between gap-3 p-3">
-                  <div className="flex-1 pr-3">
-                    <div className="font-semibold uppercase tracking-wide">{it.name}</div>
-                    {it.desc && <div className="text-sm text-neutral-600">{it.desc}</div>}
-                    {it.price && <div className="text-sm mt-1 font-medium text-neutral-700">${it.price}</div>}
+                <li key={it.id} className="flex flex-row items-stretch bg-white border-4 border-red-800 rounded-2xl overflow-hidden shadow-lg w-full min-w-[320px] max-w-[700px] mx-auto">
+                  <div className="flex-1 px-4 py-3 flex flex-col">
+                    <div>
+                      <div className="font-bold text-lg text-black mb-1">
+                        {it.isSpicy && <span className="mr-1">🌶️</span>}
+                        {it.name}
+                      </div>
+                      {it.desc && <div className="text-sm text-neutral-800 mb-2">{it.desc}</div>}
+                    </div>
+                    {it.price && <div className="text-base text-black mt-2">${it.price}</div>}
                   </div>
                   {hasImage && (
-                    <div className="shrink-0">
+                    <div className="flex items-stretch justify-end bg-white w-32 min-h-[80px]">
                       <img
                         src={imageSrc}
                         alt={it.name}
-                        className="h-16 w-16 rounded-lg object-cover ring-1 ring-neutral-200"
+                        className="w-full h-full object-cover rounded-r-2xl"
+                        style={{ minHeight: '100%', minWidth: '100%' }}
                       />
                     </div>
                   )}
@@ -139,7 +145,6 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
               <li className="p-4 text-sm text-neutral-600">No items in this section yet.</li>
             )}
           </ul>
-        </div>
       ) : null}
     </div>
   );

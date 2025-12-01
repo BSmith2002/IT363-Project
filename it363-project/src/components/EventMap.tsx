@@ -67,57 +67,14 @@ function buildOpenStreetMapEmbedUrl(lat: number, lon: number) {
 }
 
 export default function EventMap({ event }: { event: StationEvent | null }) {
-  const mapLabel = event?.mapsLabel || event?.location || "Event location";
-  const mapLink = event?.mapsUrl || "";
+  if (!event || !event.mapsUrl) return null;
 
-  const coords = useMemo(() => {
-    if (!mapLink) return null;
-    return extractLatLngFromUrl(mapLink);
-  }, [mapLink]);
+  // Extract coordinates from the event's mapsUrl
+  const coords = extractLatLngFromUrl(event.mapsUrl);
+  if (!coords) return null;
 
-  const staticMap = useMemo(() => {
-    if (!coords) return "";
-    return buildGeoapifyStaticUrl(coords.lat, coords.lng);
-  }, [coords]);
-
-  const osmEmbed = useMemo(() => {
-    if (!coords) return "";
-    return buildOpenStreetMapEmbedUrl(coords.lat, coords.lng);
-  }, [coords]);
-
-  type PreviewMode = "image" | "embed" | "link" | "none";
-  const [previewMode, setPreviewMode] = useState<PreviewMode>(() => {
-    if (staticMap) return "image";
-    if (osmEmbed) return "embed";
-    if (mapLink) return "link";
-    return "none";
-  });
-
-  useEffect(() => {
-    if (staticMap) {
-      setPreviewMode("image");
-      return;
-    }
-    if (osmEmbed) {
-      setPreviewMode("embed");
-      return;
-    }
-    if (mapLink) {
-      setPreviewMode("link");
-      return;
-    }
-    setPreviewMode("none");
-  }, [staticMap, osmEmbed, mapLink]);
-
-  const [mapInteractive, setMapInteractive] = useState(false);
-
-  useEffect(() => {
-    if (previewMode !== "embed") {
-      setMapInteractive(false);
-    }
-  }, [previewMode]);
-
-  if (!event) return null;
+  // Build Google Maps embed URL
+  const googleEmbedUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lng}&z=15&output=embed`;
 
   return (
     <section className="w-full max-w-3xl mt-10">
@@ -125,101 +82,32 @@ export default function EventMap({ event }: { event: StationEvent | null }) {
         <div className="rounded-[24px] bg-black/65 px-5 py-6 sm:px-7 sm:py-8 flex flex-col gap-6">
           <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-red-200/80">Event Location</p>
-              <h3 className="text-2xl font-semibold text-white leading-tight">{mapLabel}</h3>
+              <p className="text-xs uppercase tracking-[0.3em] text-red-800/80">Event Location</p>
+              <h3 className="text-2xl font-semibold text-white leading-tight">{event.location || "Event location"}</h3>
             </div>
-            {mapLink && (
-              <a
-                href={mapLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white transition hover:bg-white/20"
-              >
-                Open Full Map
-                <span aria-hidden>↗</span>
-              </a>
-            )}
-          </header>
-
-          {previewMode === "image" && staticMap ? (
             <a
-              href={mapLink}
+              href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative overflow-hidden rounded-[22px] border border-white/10"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white transition hover:bg-white/20"
             >
-              <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/20 to-transparent opacity-0 transition group-hover:opacity-100" />
-              <img
-                src={staticMap}
-                alt={`Map preview for ${mapLabel}`}
-                className="h-80 w-full object-cover"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                onError={() => {
-                  if (osmEmbed) {
-                    setPreviewMode("embed");
-                  } else if (mapLink) {
-                    setPreviewMode("link");
-                  } else {
-                    setPreviewMode("none");
-                  }
-                }}
-              />
-              <span className="absolute bottom-3 right-4 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">
-                View interactive map ↗
-              </span>
+              Open in Google Maps
+              <span aria-hidden>↗</span>
             </a>
-          ) : previewMode === "embed" && osmEmbed ? (
-            <div
-              className="relative overflow-hidden rounded-[22px] border border-white/10"
-              onMouseLeave={() => setMapInteractive(false)}
-            >
-              {!mapInteractive && (
-                <button
-                  type="button"
-                  onClick={() => setMapInteractive(true)}
-                  className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-center text-sm font-medium text-white transition hover:bg-black/30"
-                  aria-label="Click to enable map interactions"
-                >
-                  Click to interact with the map
-                </button>
-              )}
-              <iframe
-                src={osmEmbed}
-                title="OpenStreetMap preview"
-                width="100%"
-                height="360"
-                loading="lazy"
-                className="block"
-                referrerPolicy="no-referrer"
-                style={{ pointerEvents: mapInteractive ? "auto" : "none" }}
-              />
-            </div>
-          ) : previewMode === "link" && mapLink ? (
-            <div className="rounded-[22px] border border-dashed border-white/20 bg-white/5 p-6 text-sm text-gray-100">
-              <p className="font-semibold text-white">Map preview unavailable</p>
-              <p className="mt-2">
-                We could not generate an embedded preview, but you can still open the map in a new tab.
-              </p>
-              <a
-                href={mapLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-white/15"
-              >
-                Open map ↗
-              </a>
-              {!GEOAPIFY_API_KEY && (
-                <p className="mt-4 text-xs text-gray-400">
-                  Add <code>NEXT_PUBLIC_GEOAPIFY_API_KEY</code> to enable the embedded preview here.
-                </p>
-              )}
-            </div>
-          ) : previewMode === "none" ? (
-            <div className="rounded-[22px] border border-dashed border-white/15 bg-white/5 p-6 text-sm text-gray-300">
-              No map has been added for this event yet.
-            </div>
-          ) : null}
+          </header>
+          <div className="relative overflow-hidden rounded-[22px] border border-white/10 mt-4">
+            <iframe
+              src={googleEmbedUrl}
+              title="Google Maps preview"
+              width="100%"
+              height="360"
+              loading="lazy"
+              className="block"
+              referrerPolicy="no-referrer"
+              style={{ border: 0 }}
+              allowFullScreen
+            />
+          </div>
         </div>
       </div>
     </section>

@@ -57,7 +57,7 @@ export default function EventList({
             <li
               key={ev.id}
               className={`rounded border p-3 flex items-center justify-between ${
-                active ? "border-red-500 bg-red-50" : "border-neutral-200 bg-neutral-50"
+                active ? "border-red-800 bg-red-50" : "border-neutral-200 bg-neutral-50"
               }`}
             >
               <div>
@@ -68,7 +68,7 @@ export default function EventList({
               </div>
               <button
                 onClick={() => onSelectEvent(ev)}
-                className="px-3 py-1 rounded bg-red-600 text-white hover:opacity-90"
+                className="px-3 py-1 rounded bg-red-800 text-white hover:opacity-90"
               >
                 View
               </button>
