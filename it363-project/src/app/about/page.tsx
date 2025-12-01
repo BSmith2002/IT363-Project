@@ -98,10 +98,10 @@ export default function AboutPage() {
           <div className="rounded-3xl border border-white/60 bg-white/90 p-8 shadow-lg shadow-black/10 backdrop-blur">
             <h2 className="text-2xl font-semibold text-neutral-900">Made with the crowd in mind</h2>
             <p className="mt-4 text-neutral-700 leading-relaxed">
-              The Station thrives on feeding crowds that want something familiar but never boring. From slow-smoked meats to vegetarian wraps and loaded fries, our menus are flexible enough to match your vibe and your budget. We prep fresh for every stop so that each bite feels handcrafted.
+              The Station thrives on feeding crowds that want something familiar but never boring. From burgers to wraps and loaded fries, our menus are flexible enough to match your vibe and your budget. We prep fresh for every stop so that each bite feels handcrafted.
             </p>
             <p className="mt-4 text-neutral-700 leading-relaxed">
-              Beyond events, we work closely with local businesses for on-site lunches and appreciation days. Need a curated menu? We&apos;ll partner with you to create options that match dietary needs and service windows.
+              Beyond events, we work closely with local businesses for on-site lunches and appreciation days. Need a special catering? We'll work with you to create options that match the needs and service windows.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-600">
               <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">

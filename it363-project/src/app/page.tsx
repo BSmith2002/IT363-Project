@@ -22,34 +22,6 @@ export default function Home() {
   const [facebookPosts, setFacebookPosts] = useState<FacebookPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
-  // --- Social Meta Tags for Facebook Sharing ---
-  // Add these tags to the <head> using next/head
-  // You can adjust the content as needed for your brand/page
-  const metaTitle = "The Station Food Truck | Central Illinois Comfort Food";
-  const metaDescription = "Smoked sandwiches, comfort classics, and daily specials. Find The Station Food Truck around Peoria or book us for your next event.";
-  const metaImage = "/foodtruck.jpg";
-  const metaUrl = "https://thestationfoodtruck.com/";
-  const signatureBites = [
-    {
-      title: "Smoked Station Burger",
-      highlight: "Fan favorite",
-      description: "Hand-pattied beef, grilled onions, and our signature sauce on a toasted roll.",
-      image: "/phillytemp.jpg"
-    },
-    {
-      title: "Loaded Garlic Fries",
-      highlight: "Shareable",
-      description: "Seasoned fries tossed in garlic butter with parmesan and herbs.",
-      image: "/foodtruck.jpg"
-    },
-    {
-      title: "Buffalo Chicken Wrap",
-      highlight: "Spicy kick",
-      description: "Crispy chicken, buffalo heat, ranch drizzle, and crunchy veggies.",
-      image: "/truckimage.jpg"
-    }
-  ];
-
   const getTodayISO = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -95,16 +67,42 @@ export default function Home() {
           setFacebookPosts([
             {
               id: 1,
-              text: "🎉 We're at the Downtown Market today! Come grab your favorite cheesesteak from 11 AM - 3 PM!",
-              date: "2 hours ago",
+              text: "Good morning Friends. Today is the last daily stop of this season!! Don’t worry we have a few holiday markets left!! If you are out and about today drop by and get a bite to eat!! We are at Illinois cancercare from 11-1! This time of the year is also very sad for us because we will not see a lot of our customers till the spring. We value everyone as our customers and a lot of you as our Friends!! We want to thank everyone for supporting us!! If we don’t see you at a Winter festival we will see you in the spring!!",
+              date: "November 20 at 10:51 AM",
               image: "/placeholder-truck.jpg"
             },
             {
               id: 2,
-              text: "New menu item alert! 🌶️ Try our Spicy Buffalo Chicken Wrap - it's a game changer!",
-              date: "1 day ago",
-              image: "/placeholder-food.jpg"
-            }
+              text: `🚂THE STATION FOOD TRUCK STOP🚂
+Can’t believe we are only weeks away till the end of our season! We do have many private events and holiday Catering’s. 
+Here’s a list of public events that we hope to see you at♥️
+🚂🚂TUESDAY NOVEMBER 18
+   10:30-1:30 OSF main hospital might be the last time there for the year weather depending 
+🚂🚂Thursday November 20
+10:30-1 Illinois Cancer Care Center Route 91
+🚂🚂Friday/Saturday November 21/22
+  Nikolausmarkt - Chillicothe, IL
+*Friday 4-8
+*Saturday 11-8
+🚂🚂Saturday November 29
+Holiday Parade and Tree Lighting Celebration Morton
+PLACE PumpkinLand Community Events
+5:30-7:30`,
+              date: "November 17 at 11:05 AM",
+              image: "/thestationlogo2.png"
+            },
+            {
+              id: 3,
+              text: "Going to Riley Green tonight?? Come early to the tail gate party in the event space!! They have bags hoops,beer and of course us!! We will be serving up food starting at 3:30!! Don’t be late!!",
+              date: "November 15 at 3:25 PM",
+              image: "/rileygreen.jpg"
+            },
+            {
+              id: 4,
+              text: "Good morning Facebook friends!! Looking for something fun that has shopping, food and Santa Claus! It is a perfect day!! What are you waiting for?! Don’t be late the Market runs from 10-3!!",
+              date: "November 15 at 10:01 AM",
+              image: "/mistletoe.jpg"
+            },
           ]);
         }
       } catch (error) {
@@ -233,32 +231,14 @@ export default function Home() {
 
   // TODO: Pass queryPrefill to event form component if you want to pre-fill more fields
   return (
-      <>
-        {/* Social Meta Tags for Facebook, Twitter, and Open Graph */}
-        <head>
-          <title>{metaTitle}</title>
-          <meta name="description" content={metaDescription} />
-          {/* Open Graph / Facebook */}
-          <meta property="og:type" content="website" />
-          <meta property="og:url" content={metaUrl} />
-          <meta property="og:title" content={metaTitle} />
-          <meta property="og:description" content={metaDescription} />
-          <meta property="og:image" content={metaImage} />
-          {/* Twitter */}
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:url" content={metaUrl} />
-          <meta name="twitter:title" content={metaTitle} />
-          <meta name="twitter:description" content={metaDescription} />
-          <meta name="twitter:image" content={metaImage} />
-        </head>
-        <div className="min-h-screen">
-          <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
-        <section className="relative w-full max-w-6xl mb-12">
+    <div className="min-h-screen">
+      <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
+        <section className="relative w-full max-w-6xl mb-6 mt-2">
           <div className="relative overflow-hidden rounded-3xl shadow-2xl">
             <img src="/foodtruck.jpg" alt="The Station food truck" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#2b0a0a]/90 via-[#871010]/80 to-[#f97316]/70" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(253,186,116,0.4),transparent_55%)]" aria-hidden="true" />
-            <div className="relative px-8 py-16 sm:px-12 sm:py-20 lg:px-16">
+            <div className="relative px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
               <p className="text-sm uppercase tracking-[0.4em] text-amber-200">Rolling since 2021</p>
               <h1 className="mt-4 text-4xl md:text-6xl font-bold text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.45)]">
                 The Station Food Truck
@@ -456,8 +436,7 @@ export default function Home() {
             )}
           </div>
         </section>
-        </main>
-      </div>
-      </>
+      </main>
+    </div>
   );
 }

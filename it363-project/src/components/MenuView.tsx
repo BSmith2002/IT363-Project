@@ -82,11 +82,11 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
       {/* Removed Google Maps embed for menu page */}
       {menu?.name && <h3 className="text-2xl font-bold mb-4"></h3>}
 
-      {/* Basket pricing notice */}
-      <div className="mb-6 text-center">
-        <p className="text-lg font-bold text-neutral-800">
+      {/* Basket pricing notice styled like main page */}
+      <div className="mb-6 flex flex-col items-center">
+        <span className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-lg font-bold text-red-800 shadow-lg shadow-black/20">
           Baskets come with fries: +$3
-        </p>
+        </span>
       </div>
 
       {/* Section selector */}
@@ -112,7 +112,7 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
 
       {/* Selected section items */}
       {selectedSection ? (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 p-6 ">
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 p-6 md:justify-center text-left">
             {(selectedSection.items ?? []).map((it, index) => {
               const imageSrc = it.photoUrl;
               const hasImage = !!it.photoUrl;
