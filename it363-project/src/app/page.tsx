@@ -22,6 +22,34 @@ export default function Home() {
   const [facebookPosts, setFacebookPosts] = useState<FacebookPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
+  // --- Social Meta Tags for Facebook Sharing ---
+  // Add these tags to the <head> using next/head
+  // You can adjust the content as needed for your brand/page
+  const metaTitle = "The Station Food Truck | Central Illinois Comfort Food";
+  const metaDescription = "Smoked sandwiches, comfort classics, and daily specials. Find The Station Food Truck around Peoria or book us for your next event.";
+  const metaImage = "/foodtruck.jpg";
+  const metaUrl = "https://thestationfoodtruck.com/";
+  const signatureBites = [
+    {
+      title: "Smoked Station Burger",
+      highlight: "Fan favorite",
+      description: "Hand-pattied beef, grilled onions, and our signature sauce on a toasted roll.",
+      image: "/phillytemp.jpg"
+    },
+    {
+      title: "Loaded Garlic Fries",
+      highlight: "Shareable",
+      description: "Seasoned fries tossed in garlic butter with parmesan and herbs.",
+      image: "/foodtruck.jpg"
+    },
+    {
+      title: "Buffalo Chicken Wrap",
+      highlight: "Spicy kick",
+      description: "Crispy chicken, buffalo heat, ranch drizzle, and crunchy veggies.",
+      image: "/truckimage.jpg"
+    }
+  ];
+
   const getTodayISO = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -205,43 +233,155 @@ export default function Home() {
 
   // TODO: Pass queryPrefill to event form component if you want to pre-fill more fields
   return (
-    <div className="min-h-screen bg-white">
-      <main className="pb-16 px-4 sm:px-6 flex flex-col items-center">
-        {/* Hero Section with Solid Block Background */}
-        <section className="w-full max-w-6xl mb-8 relative">
-          {/* Solid block behind the hero */}
-          <div className="relative bg-red-800 rounded-2xl overflow-hidden shadow-2xl z-10">
-            <div className="relative px-8 py-16 text-center text-white">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Welcome to The Station</h2>
-              <p className="text-xl md:text-2xl mb-6">See us out on the run? Considering what to get? Maybe you want us to cater an event. We serve all kinds of events, feel free to reach out!</p>
-              <div className="flex gap-4 justify-center flex-wrap">
-                <a href="/menupage" className="bg-white text-red-800 px-8 py-3 rounded-full font-semibold hover:bg-neutral-100 transition">
-                  View Menu
+      <>
+        {/* Social Meta Tags for Facebook, Twitter, and Open Graph */}
+        <head>
+          <title>{metaTitle}</title>
+          <meta name="description" content={metaDescription} />
+          {/* Open Graph / Facebook */}
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={metaUrl} />
+          <meta property="og:title" content={metaTitle} />
+          <meta property="og:description" content={metaDescription} />
+          <meta property="og:image" content={metaImage} />
+          {/* Twitter */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:url" content={metaUrl} />
+          <meta name="twitter:title" content={metaTitle} />
+          <meta name="twitter:description" content={metaDescription} />
+          <meta name="twitter:image" content={metaImage} />
+        </head>
+        <div className="min-h-screen">
+          <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
+        <section className="relative w-full max-w-6xl mb-12">
+          <div className="relative overflow-hidden rounded-3xl shadow-2xl">
+            <img src="/foodtruck.jpg" alt="The Station food truck" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#2b0a0a]/90 via-[#871010]/80 to-[#f97316]/70" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(253,186,116,0.4),transparent_55%)]" aria-hidden="true" />
+            <div className="relative px-8 py-16 sm:px-12 sm:py-20 lg:px-16">
+              <p className="text-sm uppercase tracking-[0.4em] text-amber-200">Rolling since 2021</p>
+              <h1 className="mt-4 text-4xl md:text-6xl font-bold text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.45)]">
+                The Station Food Truck
+              </h1>
+              <p className="mt-6 max-w-2xl text-lg md:text-xl text-white/85">
+                Central Illinois comfort food, grilled sandwiches, and plenty of smiles. Find us around your town or bring the truck straight to your next event.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <a
+                  href="/menupage"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3 text-base font-semibold text-red-800 shadow-lg shadow-black/20 transition hover:bg-amber-50"
+                >
+                  View our Menu
                 </a>
-                <a href="/book" className="bg-red-800 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-900 transition border-2 border-white">
-                  Book Us
+                <a
+                  href="/calendar"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/70 bg-white/10 px-7 py-3 text-base font-semibold text-white transition hover:bg-white/20"
+                >
+                  Our Calendar
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7l7 7-7 7" />
+                  </svg>
                 </a>
+                <a
+                  href="/book"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/70 bg-white/10 px-7 py-3 text-base font-semibold text-white transition hover:bg-white/20"
+                >
+                  Book with Us
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+              <div className="mt-10 flex flex-wrap gap-3 text-sm text-white/85">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
+                  <span className="text-lg">🔥</span>
+                  Experienced and Passionate
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
+                  <span className="text-lg">🚚</span>
+                  Festivals · Lunches · And More!
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2">
+                  <span className="text-lg">📍</span>
+                  Peoria & beyond
+                </span>
+              </div>
+              <div className="mt-10 grid gap-4 text-sm text-white/85 sm:grid-cols-3">
+                <div className="flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-lg">⏱️</span>
+                  <div>
+                    <p className="font-semibold">Breakfast · Lunch · Dinner</p>
+                    <p>Anytime for hungry mouths</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-lg">🍟</span>
+                  <div>
+                    <p className="font-semibold">Speed and Quality</p>
+                    <p>Always ready for any event</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-lg">☎️</span>
+                  <div>
+                    <p className="font-semibold">Ready to book?</p>
+                    <p>Check out the Booking Tab!</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Facebook Posts Carousel */}
         <section className="w-full max-w-6xl mb-12">
-          <div className="bg-white rounded-xl shadow-lg border border-neutral-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center gap-3">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-              <h3 className="text-xl font-bold text-white">Latest Updates</h3>
+          <div className="grid gap-6 md:grid-cols-3">
+            <article className="rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-black/10 backdrop-blur">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-800">1</div>
+              <h2 className="mt-4 text-xl font-semibold text-neutral-900">Find us fast</h2>
+              <p className="mt-2 text-sm text-neutral-600">Peek at the calendar to see exactly where the truck will park and what time serving starts.</p>
+            </article>
+            <article className="rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-black/10 backdrop-blur">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">2</div>
+              <h2 className="mt-4 text-xl font-semibold text-neutral-900">Choose your favorites</h2>
+              <p className="mt-2 text-sm text-neutral-600">Browse the rotating menu, from specialty burgers to wraps and fries, all ready for your tastebuds.</p>
+            </article>
+            <article className="rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-black/10 backdrop-blur">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-800">3</div>
+              <h2 className="mt-4 text-xl font-semibold text-neutral-900">Bring us to you</h2>
+              <p className="mt-2 text-sm text-neutral-600">Booking is simple. Tell us about your event and we’ll work it out to fit your accommodations.</p>
+            </article>
+          </div>
+        </section>
+
+        <section className="w-full max-w-6xl mb-12">
+          <div className="rounded-3xl border border-white/60 bg-white/80 shadow-xl shadow-black/10 backdrop-blur">
+            <div className="flex flex-col gap-6 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+              <div className="flex items-center gap-3 text-[#1877f2]">
+                <svg className="h-10 w-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                <div>
+                  <h3 className="text-xl font-semibold text-neutral-900">Fresh off our Facebook</h3>
+                  <p className="text-sm text-neutral-600">Live updates, pop-ups, and daily specials.</p>
+                </div>
+              </div>
+              <a
+                href="https://www.facebook.com/Thestationfoodtruck/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-[#1877f2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1666ce]"
+              >
+                Follow us
+              </a>
             </div>
+
             {loadingPosts ? (
               <div className="h-96 bg-neutral-50 flex items-center justify-center">
-                <div className="text-neutral-500">Loading posts...</div>
+                <div className="text-neutral-500">Loading posts…</div>
               </div>
             ) : facebookPosts.length === 0 ? (
               <div className="h-96 bg-neutral-50 flex items-center justify-center">
-                <div className="text-neutral-500">No posts available</div>
+                <div className="text-neutral-500">No posts available.</div>
               </div>
             ) : (
               <>
@@ -249,37 +389,50 @@ export default function Home() {
                   {facebookPosts.map((post, index) => (
                     <div
                       key={post.id}
-                      className={`absolute inset-0 transition-opacity duration-500 ${
-                        index === currentPostIndex ? 'opacity-100' : 'opacity-0'
-                      }`}
+                      className={`absolute inset-0 transition-opacity duration-500 ${index === currentPostIndex ? "opacity-100" : "opacity-0"}`}
                     >
                       <div className="h-full flex flex-col md:flex-row">
                         {post.image && (
                           <div className="md:w-1/2 h-48 md:h-full bg-neutral-200">
-                            <img 
-                              src={post.image} 
+                            <img
+                              src={post.image}
                               alt="Facebook post"
-                              className="w-full h-full object-cover"
+                              className="h-full w-full object-cover"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EAdd Image%3C/text%3E%3C/svg%3E';
                               }}
                             />
                           </div>
                         )}
-                        <div className={`${post.image ? 'md:w-1/2' : 'w-full'} p-8 flex flex-col justify-center`}>
-                          <p className="text-lg text-neutral-800 mb-4">{post.text}</p>
-                          <div className="flex items-center gap-4">
-                            <p className="text-sm text-neutral-500">{post.date}</p>
+                        <div className={`${post.image ? "md:w-1/2" : "w-full"} flex flex-col justify-center p-8`}
+                        >
+                          <p
+                            className="text-lg text-neutral-800 mb-2 leading-relaxed line-clamp-4 sm:line-clamp-none"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 4,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              wordBreak: 'break-word',
+                              maxWidth: '100%',
+                              paddingRight: '2px'
+                            }}
+                          >
+                            {post.text}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500">
+                            <span>{post.date}</span>
                             {post.url && (
                               <a
                                 href={post.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline flex items-center gap-1"
+                                className="inline-flex items-center gap-1 text-[#1877f2] font-medium hover:underline"
                               >
                                 View on Facebook
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6h8m0 0v8m0-8L5 19" />
                                 </svg>
                               </a>
                             )}
@@ -289,14 +442,12 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-center gap-2 py-4 bg-white">
+                <div className="flex justify-center gap-2 py-4 bg-white/90">
                   {facebookPosts.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentPostIndex(index)}
-                      className={`w-2.5 h-2.5 rounded-full transition ${
-                        index === currentPostIndex ? 'bg-blue-600 w-8' : 'bg-neutral-300'
-                      }`}
+                      className={`h-2 rounded-full transition ${index === currentPostIndex ? "w-10 bg-[#1877f2]" : "w-2 bg-neutral-300"}`}
                       aria-label={`Go to post ${index + 1}`}
                     />
                   ))}
@@ -305,84 +456,8 @@ export default function Home() {
             )}
           </div>
         </section>
-
-        {/* Awards & Recognition Section */}
-        <section className="w-full max-w-6xl mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-neutral-900 mb-2">Awards & Recognition</h2>
-            <p className="text-neutral-600">Honored to serve our community</p>
-          </div>
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
-                <span className="text-4xl">🏆</span>
-              </div>
-              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
-              <p className="text-sm text-neutral-600">Add award description here</p>
-              <p className="text-xs text-neutral-500 mt-2">Year</p>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-4xl">🌟</span>
-              </div>
-              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
-              <p className="text-sm text-neutral-600">Add award description here</p>
-              <p className="text-xs text-neutral-500 mt-2">Year</p>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center">
-                <span className="text-4xl">🥇</span>
-              </div>
-              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
-              <p className="text-sm text-neutral-600">Add award description here</p>
-              <p className="text-xs text-neutral-500 mt-2">Year</p>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-lg border border-neutral-200 p-6 text-center hover:shadow-xl transition">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-4xl">⭐</span>
-              </div>
-              <h4 className="font-bold text-lg mb-2 text-neutral-900">Award Title</h4>
-              <p className="text-sm text-neutral-600">Add award description here</p>
-              <p className="text-xs text-neutral-500 mt-2">Year</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Schedule Section Header */}
-        <section className="w-full max-w-6xl mb-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-neutral-900 mb-2">Our Schedule</h2>
-            <p className="text-neutral-600 text-lg">Find out where we'll be and what we're serving</p>
-          </div>
-        </section>
-
-        <Calendar
-          selectedDate={selectedDate}
-          eventsByDate={eventsByDate}
-          onMonthChange={(y, m) => setCurrentMonth({ year: y, month: m })}
-          onSelect={(d) => {
-            setSelectedDate(d);
-            setSelectedEventId(null);
-            setSelectedEvent(null);
-            setSelectedMenuId(null);
-          }}
-        />
-        <EventList
-          date={selectedDate}
-          selectedEventId={selectedEventId}
-          onSelectEvent={(event) => {
-            setSelectedEventId(event.id);
-            setSelectedEvent(event);
-            setSelectedMenuId(event.menuId);
-          }}
-        />
-        {/* Only show EventMap after an event is selected */}
-        {selectedEvent && <EventMap event={selectedEvent} />}
-        <MenuView menuId={selectedMenuId} />
-      </main>
-    </div>
+        </main>
+      </div>
+      </>
   );
 }

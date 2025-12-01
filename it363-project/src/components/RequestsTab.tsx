@@ -17,12 +17,13 @@ export type BookingRequest = {
 type RequestsTabProps = {
   requests: BookingRequest[];
   loading: boolean;
+  error?: string | null;
   showToast: (msg: string, type?: "success" | "error") => void;
   menus: any[];
   menuMap: Map<string, string | undefined>;
 };
 
-export default function RequestsTab({ requests, loading, showToast, menus, menuMap }: RequestsTabProps) {
+export default function RequestsTab({ requests, loading, error, showToast, menus, menuMap }: RequestsTabProps) {
     // --- Map location search logic (copied from Days tab) ---
     const GEOAPIFY_API_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY || "";
     const GEOAPIFY_MIN_QUERY_LENGTH = 3;
@@ -265,19 +266,24 @@ export default function RequestsTab({ requests, loading, showToast, menus, menuM
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-black/10 p-5 bg-white max-w-3xl mx-auto w-full">
-        <h2 className="text-xl font-semibold mb-3">Booking Requests:</h2>
-        {loading && <div className="text-black/60">Loading...</div>}
-        {!loading && requests.length === 0 && (
-          <div className="text-black/60">No booking requests.</div>
+      <div className="mx-auto w-full max-w-3xl rounded-3xl border border-white/60 bg-white/95 p-6 shadow-lg shadow-black/10 backdrop-blur">
+        <h2 className="text-xl font-semibold text-neutral-900">Booking Requests:</h2>
+        {loading && <div className="mt-4 text-sm text-neutral-600">Loading...</div>}
+        {!loading && error && (
+          <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
         )}
-        <ul className="divide-y divide-black/10">
+        {!loading && !error && requests.length === 0 && (
+          <div className="mt-4 rounded-lg bg-neutral-100 px-4 py-3 text-sm text-neutral-600">No booking requests.</div>
+        )}
+        <ul className="mt-4 divide-y divide-neutral-200">
           {requests.map((req) => (
-            <li key={req.id} className="py-4 flex flex-col gap-2">
-              <div className="font-medium text-lg">{req.business ? `${req.business} (${req.name})` : req.name}</div>
-              <div className="text-sm text-black/70">
-                <span className="font-semibold">Date:</span> {req.date}
-                <span className="font-semibold ml-2">Location:</span> {req.town}
+            <li key={req.id} className="py-5">
+              <div className="font-medium text-lg text-neutral-900">{req.business ? `${req.business} (${req.name})` : req.name}</div>
+              <div className="mt-1 text-sm text-neutral-700">
+                <span className="font-semibold">Date:</span> {req.date || "N/A"}
+                <span className="font-semibold ml-2">Location:</span> {req.town || "N/A"}
                 {req.phone && (
                   <span className="ml-2"><span className="font-semibold">Phone:</span> {req.phone}</span>
                 )}
@@ -285,20 +291,20 @@ export default function RequestsTab({ requests, loading, showToast, menus, menuM
                   <span className="ml-2"><span className="font-semibold">Email:</span> {req.email}</span>
                 )}
               </div>
-              <div className="text-sm text-black/80">
+              <div className="mt-2 text-sm text-neutral-700">
                 <span className="font-semibold">Details:</span> {req.description || "(none)"}
               </div>
-              <div className="flex gap-2 mt-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={() => bookRequest(req)}
-                  className="rounded bg-green-600 text-white px-4 py-2 font-medium hover:opacity-90"
+                  className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-500"
                 >
                   Book
                 </button>
                 <button
                   onClick={() => removeRequest(req.id)}
                   disabled={busy}
-                  className="rounded bg-red-800 text-white px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
+                  className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
                 >
                   Remove
                 </button>
@@ -307,7 +313,7 @@ export default function RequestsTab({ requests, loading, showToast, menus, menuM
                     href={contactHref(req)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded bg-blue-600 text-white px-4 py-2 font-medium hover:opacity-90"
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
                   >
                     Contact
                   </a>

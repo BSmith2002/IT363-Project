@@ -81,20 +81,40 @@ export default function BookPage() {
   })();
 
   return (
-    <main className="min-h-screen w-full bg-white text-neutral-900">
-      <div className="content-wrapper">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900">Book with us!</h1>
-        <p className="mt-2 text-neutral-600">Tell us a bit about your event and the date you're looking at. We'll follow up with you to confirm everything!</p>
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <section className="relative overflow-hidden rounded-3xl border border-white/60 bg-white/90 p-10 shadow-xl shadow-black/10 backdrop-blur">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.3),transparent_55%)]" aria-hidden="true" />
+          <div className="relative max-w-3xl">
+            <p className="text-sm uppercase tracking-[0.35em] text-red-700">Plan ahead</p>
+            <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-neutral-900">Bring The Station to your next event</h1>
+            <p className="mt-4 text-neutral-700">
+              Pop-ups, corporate lunches, weddings, or community nights—we tailor every menu and service window to fit your crowd.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-600">
+              <span className="inline-flex items-center gap-2 rounded-full bg-red-100/80 px-4 py-2 text-red-700">
+                <span className="text-lg">👥</span>
+                Pricing based on event and attendance
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-2 text-amber-700">
+                <span className="text-lg">🍽️</span>
+                Customizable menus
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2">
+                <span className="text-lg">📆</span>
+                Best to book multiple weeks out
+              </span>
+            </div>
+          </div>
+        </section>
 
-        <div className="mt-8 grid gap-8 md:grid-cols-[2fr_1fr]">
-        {/* Form */}
-        <form onSubmit={submit} className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <section className="mt-10 grid gap-8 md:grid-cols-[2fr_1fr]">
+          <form onSubmit={submit} className="rounded-3xl border border-white/60 bg-white/90 p-6 shadow-lg shadow-black/10 backdrop-blur sm:p-8">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1 sm:col-span-2">
-              <label className="text-sm text-neutral-700">Your Name</label>
+              <label className="text-sm font-medium text-neutral-700">Your Name</label>
               <input
-                className="rounded-md border border-neutral-300 px-3 py-2"
+                className="rounded-md border border-neutral-200 bg-white px-3 py-2 shadow-inner text-black"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Jane Doe"
@@ -103,9 +123,9 @@ export default function BookPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-neutral-700">Business (or Personal)</label>
+              <label className="text-sm font-medium text-neutral-700">Business (or Personal)</label>
               <input
-                className="rounded-md border border-neutral-300 px-3 py-2"
+                className="rounded-md border border-neutral-200 bg-white px-3 py-2 shadow-inner text-black"
                 value={business}
                 onChange={e => setBusiness(e.target.value)}
                 placeholder="Your business name or 'Personal'"
@@ -113,9 +133,9 @@ export default function BookPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-neutral-700">Location</label>
+              <label className="text-sm font-medium text-neutral-700">Location</label>
               <input
-                className="rounded-md border border-neutral-300 px-3 py-2"
+                className="rounded-md border border-neutral-200 bg-white px-3 py-2 shadow-inner text-black"
                 value={town}
                 onChange={e => setTown(e.target.value)}
                 placeholder="Peoria, IL"
@@ -124,10 +144,10 @@ export default function BookPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-neutral-700">Requested Date</label>
+              <label className="text-sm font-medium text-neutral-800">Requested Date</label>
               <input
                 type="date"
-                className="rounded-md border border-neutral-300 px-3 py-2"
+                className="rounded-md border border-neutral-200 bg-white px-3 py-2 shadow-inner text-black"
                 value={date}
                 min={todayISO}
                 onChange={e => setDate(e.target.value)}
@@ -136,10 +156,10 @@ export default function BookPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-neutral-700">Phone Number</label>
+              <label className="text-sm font-medium text-neutral-700">Phone Number</label>
               <input
                 type="tel"
-                className="rounded-md border border-neutral-300 px-3 py-2"
+                className="rounded-md border border-neutral-200 bg-white px-3 py-2 shadow-inner text-black"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="(309) 555-1234"
@@ -147,10 +167,10 @@ export default function BookPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-neutral-700">Email Address</label>
+              <label className="text-sm font-medium text-neutral-700">Email Address</label>
               <input
                 type="email"
-                className="rounded-md border border-neutral-300 px-3 py-2"
+                className="rounded-md border border-neutral-200 bg-white px-3 py-2 shadow-inner text-black"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -162,9 +182,9 @@ export default function BookPage() {
             </div>
 
             <div className="flex flex-col gap-1 sm:col-span-2">
-              <label className="text-sm text-neutral-700">Event Description</label>
+              <label className="text-sm font-medium text-neutral-700">Event Description</label>
               <textarea
-                className="rounded-md border border-neutral-300 px-3 py-2 min-h-[140px]"
+                className="rounded-md border border-neutral-200 bg-white px-3 py-2 min-h-[140px] shadow-inner text-black"
                 value={details}
                 onChange={e => setDetails(e.target.value)}
                 placeholder="Briefly describe your event, expected crowd size, preferred time window, and any special notes."
@@ -172,8 +192,8 @@ export default function BookPage() {
             </div>
           </div>
 
-          {err && <div className="mt-3 text-sm text-red-800">{err}</div>}
-          {msg && <div className="mt-3 text-sm text-green-700">{msg}</div>}
+          {err && <div className="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{err}</div>}
+          {msg && <div className="mt-3 rounded-md bg-green-50 px-4 py-2 text-sm text-green-700">{msg}</div>}
 
           {siteKey && (
             <div className="mt-4">
@@ -186,43 +206,48 @@ export default function BookPage() {
               />
             </div>
           )}
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               type="submit"
               disabled={busy || (Boolean(siteKey) && !captchaToken)}
-              className="inline-flex items-center justify-center rounded-md bg-red-800 px-4 py-2 text-white font-medium hover:opacity-90 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-red-800 px-5 py-2.5 text-white font-medium shadow-lg shadow-black/20 transition hover:bg-red-700 disabled:opacity-60"
             >
               {busy ? "Sending…" : "Submit Request"}
             </button>
             <a
               href={mailtoHref}
-              className="text-sm text-neutral-600 hover:text-neutral-900 underline"
+              className="text-sm font-medium text-red-800 hover:underline"
             >
               or email us directly
             </a>
           </div>
         </form>
 
-        {/* Contact info sidebar */}
-        <aside className="rounded-2xl border border-neutral-200 bg-white p-6 h-fit">
-          <h2 className="text-xl font-semibold text-neutral-900">Contact</h2>
-          <p className="mt-2 text-neutral-600">Prefer to reach out yourself? Give us a call!</p>
-          <ul className="mt-4 space-y-2 text-neutral-800">
+        <aside className="rounded-3xl border border-white/60 bg-white/90 p-6 shadow-lg shadow-black/10 backdrop-blur h-fit">
+          <h2 className="text-xl font-semibold text-neutral-900">Questions?</h2>
+          <p className="mt-2 text-sm text-neutral-600">We&apos;re quick to respond during business hours.</p>
+          <ul className="mt-4 space-y-3 text-sm text-neutral-700">
             <li>
-              <span className="font-medium">Phone:</span> <a className="hover:underline" href="tel:+13094536700">(309) 453-6700</a>
+              <span className="font-semibold text-neutral-900">Phone:</span> <a className="text-red-800 hover:underline" href="tel:+13094536700">(309) 453-6700</a>
             </li>
             <li>
-              <span className="font-medium">Email:</span> <a className="hover:underline" href="mailto:speck4193@gmail.com">speck4193@gmail.com</a>
+              <span className="font-semibold text-neutral-900">Email:</span> <a className="text-red-800 hover:underline" href="mailto:speck4193@gmail.com">speck4193@gmail.com</a>
             </li>
           </ul>
-          <div className="mt-6 text-sm text-neutral-600">
-            <p className="mt-1">Looking forward to serving your event!</p>
+          <div className="mt-6 rounded-2xl bg-red-50/80 p-4 text-sm text-red-900">
+            <p className="font-semibold">Helpful tips</p>
+            <ul className="mt-2 space-y-1">
+              <li>• Include rough headcount so we can right-size the menu.</li>
+              <li>• Share parking and directions details if the truck spot is tricky.</li>
+              <li>• Rain plan? Let us know so we can prep.</li>
+            </ul>
           </div>
           <div className="mt-6 text-sm">
             <Link href="/" className="text-red-800 hover:underline">Back to Home</Link>
           </div>
         </aside>
-        </div>
+        </section>
+
         {siteKey && (
           <Script
             src="https://challenges.cloudflare.com/turnstile/v0/api.js"
@@ -236,8 +261,7 @@ export default function BookPage() {
             }}
           />
         )}
-        </div>
       </div>
-    </main>
+    </div>
   );
 }

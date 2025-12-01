@@ -85,7 +85,7 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
       {/* Basket pricing notice */}
       <div className="mb-6 text-center">
         <p className="text-lg font-bold text-neutral-800">
-          All Baskets come with fries: +$3
+          Baskets come with fries: +$3
         </p>
       </div>
 
@@ -112,7 +112,7 @@ export default function MenuView({ menuId }: { menuId: string | null }) {
 
       {/* Selected section items */}
       {selectedSection ? (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 p-6 bg-white">
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 p-6 ">
             {(selectedSection.items ?? []).map((it, index) => {
               const imageSrc = it.photoUrl;
               const hasImage = !!it.photoUrl;

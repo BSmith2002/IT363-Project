@@ -86,23 +86,38 @@ export default function AdminDashboard() {
         return;
       }
       try {
-        const ref = doc(db, "admin", "emails");
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const data = snap.data();
-          const values = Object.values(data).map(v => (typeof v === "string" ? v.trim().toLowerCase() : ""));
-          if (values.includes(user.email.trim().toLowerCase())) {
-            setIsGcpAdmin(true);
-          } else {
-            setIsGcpAdmin(false);
-          }
-        } else {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
           setIsGcpAdmin(false);
+          return;
         }
+
+        const token = await currentUser.getIdToken(/* forceRefresh */ true).catch(() => currentUser.getIdToken());
+        if (!token) {
+          setIsGcpAdmin(false);
+          return;
+        }
+
+        const res = await fetch("/api/admin/manage-admin-emails", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          setIsGcpAdmin(false);
+          return;
+        }
+
+        const json = await res.json().catch(() => ({}));
+        setIsGcpAdmin(Boolean(json?.gcpAdmin));
       } catch (e) {
+        console.warn("[AdminDashboard] Unable to determine GCP admin status", e);
         setIsGcpAdmin(false);
+      } finally {
+        setCheckingGcpAccess(false);
       }
-      setCheckingGcpAccess(false);
     }
     checkGcpAdmin();
   }, [user]);
@@ -116,29 +131,38 @@ export default function AdminDashboard() {
   // Show login form if not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-white text-black px-4 py-10">
-        <div className="mx-auto w-full max-w-md rounded-2xl border border-black/10 bg-white p-6 shadow-xl">
-          <h1 className="text-3xl text-center font-semibold mb-6">Admin Portal</h1>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="email"
-              placeholder="User"
-              className="w-full rounded-md px-3 py-2 border border-black/20"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full rounded-md px-3 py-2 border border-black/20"
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
-              required
-            />
-            {error && <div className="text-sm text-red-800">{error}</div>}
-            <button type="submit" className="w-full rounded-md bg-red-800 text-white py-2 font-medium hover:opacity-90">
-              Login
+      <div className="relative min-h-screen overflow-hidden bg-[#120707] text-white px-4 py-12">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#280909] via-[#7b0e0e] to-[#f97316] opacity-75" aria-hidden="true" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(0,0,0,0.35),transparent_60%)]" aria-hidden="true" />
+        <div className="relative mx-auto w-full max-w-md rounded-3xl border border-white/20 bg-black/45 p-8 shadow-2xl backdrop-blur-md">
+          <h1 className="text-3xl text-center font-semibold">Admin Portal</h1>
+          <p className="mt-3 text-center text-sm text-white/70">Sign in to manage events and menus.</p>
+          <form onSubmit={handleLogin} className="mt-8 space-y-4">
+            <div>
+              <label className="text-xs uppercase tracking-wide text-white/60">Email</label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                className="mt-1 w-full rounded-lg border border-white/20 bg-white/90 px-3 py-2 text-black focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wide text-white/60">Password</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                className="mt-1 w-full rounded-lg border border-white/20 bg-white/90 px-3 py-2 text-black focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+                value={pass}
+                onChange={(e) => setPass(e.target.value)}
+                required
+              />
+            </div>
+            {error && <div className="rounded-md bg-red-500/15 px-3 py-2 text-xs text-amber-200">{error}</div>}
+            <button type="submit" className="w-full rounded-full bg-amber-400 py-2.5 text-sm font-semibold text-red-900 transition hover:bg-amber-300">
+              Sign in
             </button>
           </form>
         </div>
@@ -147,38 +171,41 @@ export default function AdminDashboard() {
   }
   // Show dashboard if authenticated
   return (
-    <div className="min-h-screen bg-white text-black px-4 py-10">
-      <div className="mx-auto w-full max-w-6xl">
-        {/* Header: Show logged-in user and admin status */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Admin</h1>
-            <p className="text-sm text-black/70">
-              Signed in as <span className="font-medium">{user.email}</span>
+    <div className="min-h-screen bg-[#fdf2e9] text-neutral-900 px-4 py-10">
+      <div className="mx-auto w-full max-w-6xl space-y-8">
+        <div className="rounded-3xl border border-white/60 bg-white/90 px-6 py-6 shadow-lg shadow-black/10 backdrop-blur">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.45em] text-red-700">Dashboard</p>
+              <h1 className="mt-2 text-2xl font-semibold">Welcome back, {user.email}</h1>
+              <p className="text-sm text-neutral-600">
+                Manage daily stops, menu updates, booking requests, and user access from one place.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
               {!checkingGcpAccess && (
-                <span className={`ml-2 inline-block text-xs px-2 py-0.5 rounded ${
-                  isGcpAdmin 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-blue-100 text-blue-800"
+                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1 text-xs font-semibold ${
+                  isGcpAdmin ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
                 }`}>
+                  <span className="h-2 w-2 rounded-full bg-current" />
                   {isGcpAdmin ? "GCP Admin" : "Standard Admin"}
                 </span>
               )}
-            </p>
+              <button onClick={() => signOut(auth)} className="rounded-full bg-red-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
+                Sign out
+              </button>
+            </div>
           </div>
-          <button onClick={() => signOut(auth)} className="rounded bg-red-800 text-white px-3 py-1 hover:opacity-90">
-            Sign out
-          </button>
         </div>
-        {/* Tabs */}
-        <div className="sticky top-0 z-10 mb-6 rounded-xl border border-black/10 bg-white/80 backdrop-blur">
+
+        <div className="sticky top-6 z-10 rounded-3xl border border-white/60 bg-white/90 shadow-md shadow-black/5 backdrop-blur">
           <div className="flex">
             {TABS.map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 px-4 py-3 text-center font-medium transition ${
-                  tab === t ? "bg-red-800 text-white" : "text-black hover:bg-black/5"
+                className={`flex-1 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.2em] transition ${
+                  tab === t ? "rounded-3xl bg-red-800 text-white shadow-inner" : "text-neutral-600 hover:bg-white"
                 }`}
               >
                 {t}
@@ -202,9 +229,9 @@ export default function AdminDashboard() {
             {isGcpAdmin ? (
               <UsersTab />
             ) : (
-              <div className="text-center py-8">
-                <div className="text-red-800 font-medium">Access Denied</div>
-                <div className="text-black/60 mt-2">User management requires GCP admin privileges.</div>
+              <div className="py-10 text-center">
+                <div className="text-lg font-semibold text-red-800">Access limited</div>
+                <div className="mt-2 text-sm text-neutral-600">User management requires GCP admin privileges.</div>
               </div>
             )}
           </div>
