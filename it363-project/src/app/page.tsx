@@ -22,13 +22,6 @@ export default function Home() {
   const [facebookPosts, setFacebookPosts] = useState<FacebookPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
-  // --- Social Meta Tags for Facebook Sharing ---
-  // Add these tags to the <head> using next/head
-  // You can adjust the content as needed for your brand/page
-  const metaTitle = "The Station Food Truck | Central Illinois Comfort Food";
-  const metaDescription = "Smoked sandwiches, comfort classics, and daily specials. Find The Station Food Truck around Peoria or book us for your next event.";
-  const metaImage = "/foodtruck.jpg";
-  const metaUrl = "https://thestationfoodtruck.com/";
   const signatureBites = [
     {
       title: "Smoked Station Burger",
@@ -233,26 +226,8 @@ export default function Home() {
 
   // TODO: Pass queryPrefill to event form component if you want to pre-fill more fields
   return (
-      <>
-        {/* Social Meta Tags for Facebook, Twitter, and Open Graph */}
-        <head>
-          <title>{metaTitle}</title>
-          <meta name="description" content={metaDescription} />
-          {/* Open Graph / Facebook */}
-          <meta property="og:type" content="website" />
-          <meta property="og:url" content={metaUrl} />
-          <meta property="og:title" content={metaTitle} />
-          <meta property="og:description" content={metaDescription} />
-          <meta property="og:image" content={metaImage} />
-          {/* Twitter */}
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:url" content={metaUrl} />
-          <meta name="twitter:title" content={metaTitle} />
-          <meta name="twitter:description" content={metaDescription} />
-          <meta name="twitter:image" content={metaImage} />
-        </head>
-        <div className="min-h-screen">
-          <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
+    <div className="min-h-screen">
+      <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
         <section className="relative w-full max-w-6xl mb-12">
           <div className="relative overflow-hidden rounded-3xl shadow-2xl">
             <img src="/foodtruck.jpg" alt="The Station food truck" className="absolute inset-0 h-full w-full object-cover" />
@@ -456,8 +431,7 @@ export default function Home() {
             )}
           </div>
         </section>
-        </main>
-      </div>
-      </>
+      </main>
+    </div>
   );
 }
