@@ -3,7 +3,7 @@
   // You can adjust the content as needed for your brand/page
 export default function Head() {
   const metaTitle = "The Station Food Truck | Central Illinois Comfort Food";
-  const metaDescription = "Smoked sandwiches, comfort classics, and daily specials. Find The Station Food Truck around Peoria or book us for your next event.";
+  const metaDescription = "Grilled sandwiches, comfort classics, and daily specials. Find The Station Food Truck around Peoria or book us for your next event.";
   const metaImage = "/foodtruck.jpg";
   const metaUrl = "https://thestationfoodtruck.com/";
 
