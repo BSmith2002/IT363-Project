@@ -228,12 +228,12 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <main className="pb-20 px-4 sm:px-6 flex flex-col items-center">
-        <section className="relative w-full max-w-6xl mb-12">
+        <section className="relative w-full max-w-6xl mb-6 mt-2">
           <div className="relative overflow-hidden rounded-3xl shadow-2xl">
             <img src="/foodtruck.jpg" alt="The Station food truck" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#2b0a0a]/90 via-[#871010]/80 to-[#f97316]/70" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(253,186,116,0.4),transparent_55%)]" aria-hidden="true" />
-            <div className="relative px-8 py-16 sm:px-12 sm:py-20 lg:px-16">
+            <div className="relative px-4 py-6 sm:px-8 sm:py-10 lg:px-12">
               <p className="text-sm uppercase tracking-[0.4em] text-amber-200">Rolling since 2021</p>
               <h1 className="mt-4 text-4xl md:text-6xl font-bold text-white drop-shadow-[0_10px_35px_rgba(0,0,0,0.45)]">
                 The Station Food Truck

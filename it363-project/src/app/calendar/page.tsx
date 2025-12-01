@@ -121,7 +121,7 @@ export default function CalendarPage() {
           </div>
         </section>
 
-        <section className="mt-12 rounded-3xl border border-white/60 bg-white/90 p-6 shadow-xl shadow-black/10 backdrop-blur sm:p-10">
+        <section className="mt-12 rounded-3xl p-6">
           <div className="flex flex-col items-center gap-10">
             <Calendar
               selectedDate={selectedDate}

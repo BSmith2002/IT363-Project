@@ -143,7 +143,7 @@ export default function Header() {
           style={{ position: "absolute", left: 0, right: 0, top: "var(--header-height)", zIndex: 40 }}
         >
           <div className="border-t border-white/20 bg-[#7c0a02]/95 backdrop-blur-sm shadow-lg shadow-black/30">
-            <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+            <div className="mx-auto max-w-7xl px-4 py-2 sm:px-6">
               <ul className="flex flex-col items-center gap-3">
                 <li>
                   <a

@@ -52,7 +52,7 @@ body > * {
 /* By default the content-wrapper reserves space for the header so the header
    won't visually cover content on first paint (before client JS runs). */
 .content-wrapper {
-  margin-top: var(--header-height);
+  margin-top: calc(var(--header-height) / 3);
   transition: margin-top 200ms ease;
   position: relative;
   min-height: calc(100vh - var(--header-height));
